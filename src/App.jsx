@@ -3,6 +3,7 @@ import { useAuth } from './context/AuthContext'
 import Navbar from './components/Navbar'
 import ProtectedRoute from './components/ProtectedRoute'
 import Marketplace from './pages/Marketplace'
+import Ranking from './pages/Ranking'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import InstructorDashboard from './pages/InstructorDashboard'
@@ -21,6 +22,7 @@ export default function App() {
       <Navbar />
       <Routes>
         <Route path="/" element={<Marketplace />} />
+        <Route path="/ranking" element={<Ranking />} />
         <Route path="/login" element={<Login />} />
         <Route path="/registro" element={<Register />} />
         <Route path="/evaluar/:token" element={<Evaluar />} />

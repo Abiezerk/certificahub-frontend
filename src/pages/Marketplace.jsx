@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import api, { apiErrorMessage } from '../api/client'
 import { useAuth } from '../context/AuthContext'
-import InstructorCard from '../components/InstructorCard'
+import InstructorDestacados from '../components/InstructorDestacados'
+import api, { apiErrorMessage } from '../api/client'
 import PrecioChips from '../components/PrecioChips'
 
 function calcularEstimado(precioEsp, participantes) {
@@ -25,15 +25,9 @@ function calcularEstimado(precioEsp, participantes) {
 
 export default function Marketplace() {
   const { user } = useAuth()
-  const [instructores, setInstructores] = useState([])
+  const esEmpresa = user?.userType === 'Empresa'
+
   const [preciosPorInstructor, setPreciosPorInstructor] = useState({})
-  const [especialidades, setEspecialidades] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
-
-  const [especialidadId, setEspecialidadId] = useState('')
-  const [ratingMinimo, setRatingMinimo] = useState('')
-
   const [detalle, setDetalle] = useState(null)
   const [contratarForm, setContratarForm] = useState({
     especialidadId: '',
@@ -44,47 +38,19 @@ export default function Marketplace() {
   const [contratarMsg, setContratarMsg] = useState({ type: '', text: '' })
   const [enviando, setEnviando] = useState(false)
 
-  useEffect(() => {
-    api.get('/especialidades').then((res) => setEspecialidades(res.data)).catch(() => {})
-  }, [])
-
-  async function cargar() {
-    setLoading(true)
-    setError('')
-    try {
-      const params = {}
-      if (especialidadId) params.especialidadId = especialidadId
-      if (ratingMinimo) params.ratingMinimo = ratingMinimo
-      const { data } = await api.get('/instructores/marketplace', { params })
-      setInstructores(data)
-
-      const entries = await Promise.all(
-        data.map(async (i) => {
-          try {
-            const res = await api.get(`/instructores/${i.id}/especialidades-precios`)
-            return [i.id, res.data]
-          } catch {
-            return [i.id, []]
-          }
-        })
-      )
-      setPreciosPorInstructor(Object.fromEntries(entries))
-    } catch (err) {
-      setError(apiErrorMessage(err, 'No se pudo cargar el marketplace'))
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    cargar()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  function abrirDetalle(instructor) {
+  async function abrirDetalle(instructor) {
     setDetalle(instructor)
     setContratarMsg({ type: '', text: '' })
     setContratarForm({ especialidadId: '', fechaCurso: '', numeroParticipantes: 5, descripcion: '' })
+
+    if (!preciosPorInstructor[instructor.id]) {
+      try {
+        const res = await api.get(`/instructores/${instructor.id}/especialidades-precios`)
+        setPreciosPorInstructor((prev) => ({ ...prev, [instructor.id]: res.data }))
+      } catch {
+        setPreciosPorInstructor((prev) => ({ ...prev, [instructor.id]: [] }))
+      }
+    }
   }
 
   async function enviarContratacion(e) {
@@ -107,10 +73,8 @@ export default function Marketplace() {
     }
   }
 
-  const esEmpresa = user?.userType === 'Empresa'
   const preciosDetalle = detalle ? preciosPorInstructor[detalle.id] || [] : []
   const conPrecio = preciosDetalle.filter((p) => p.tienePrecio)
-
   const precioEspSeleccionada = conPrecio.find((p) => p.especialidadId === Number(contratarForm.especialidadId))
   const precioEstimado = calcularEstimado(precioEspSeleccionada, Number(contratarForm.numeroParticipantes) || 0)
 
@@ -125,9 +89,9 @@ export default function Marketplace() {
             participantes de sus cursos realmente evalúan, no solo un promedio bonito.
           </p>
           <div className="hero-actions">
-            <a href="#marketplace" className="btn btn-primary">
-              Buscar instructor
-            </a>
+            <Link to="/ranking" className="btn btn-primary">
+              Ver todos los instructores
+            </Link>
             {!user && (
               <Link to="/registro" className="btn btn-outline">
                 Ofrecer cursos como instructor
@@ -137,40 +101,7 @@ export default function Marketplace() {
         </div>
       </section>
 
-      <div className="container" id="marketplace">
-        <div className="filters-bar">
-          <select value={especialidadId} onChange={(e) => setEspecialidadId(e.target.value)}>
-            <option value="">Todas las especialidades</option>
-            {especialidades.map((esp) => (
-              <option key={esp.id} value={esp.id}>
-                {esp.nombre}
-              </option>
-            ))}
-          </select>
-          <select value={ratingMinimo} onChange={(e) => setRatingMinimo(e.target.value)}>
-            <option value="">Cualquier calificación</option>
-            <option value="4">4+ estrellas</option>
-            <option value="3">3+ estrellas</option>
-          </select>
-          <button className="btn btn-outline btn-sm" onClick={cargar}>
-            Aplicar filtros
-          </button>
-        </div>
-
-        {error && <div className="banner banner-error">{error}</div>}
-
-        {loading ? (
-          <p style={{ color: 'var(--ink-soft)' }}>Cargando instructores…</p>
-        ) : instructores.length === 0 ? (
-          <div className="empty-state">No hay instructores que coincidan con estos filtros todavía.</div>
-        ) : (
-          <div className="instructor-grid">
-            {instructores.map((i) => (
-              <InstructorCard key={i.id} instructor={i} canContratar={esEmpresa} onVerDetalle={abrirDetalle} />
-            ))}
-          </div>
-        )}
-      </div>
+      <InstructorDestacados canContratar={esEmpresa} onVerDetalle={abrirDetalle} />
 
       {detalle && (
         <div className="modal-backdrop" onClick={() => setDetalle(null)}>

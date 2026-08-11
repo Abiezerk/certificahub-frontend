@@ -2,9 +2,17 @@ import { useEffect, useState } from 'react'
 import api, { apiErrorMessage } from '../api/client'
 import PrecioChips from '../components/PrecioChips'
 
-const TABS = ['Próximos cursos', 'Especialidades y precios', 'Certificados']
+const TABS = ['Mi perfil', 'Próximos cursos', 'Especialidades y precios', 'Certificados']
 
 const RANGOS_VACIOS = { rango1Min: 1, rango1Max: 5, rango1Precio: '', rango2Min: 6, rango2Max: 10, rango2Precio: '', rango3Min: 11, rango3Max: 20, rango3Precio: '', rango4Min: 21, rango4Precio: '' }
+
+const ESTADOS_MEXICO = [
+  'Aguascalientes', 'Baja California', 'Baja California Sur', 'Campeche', 'Chiapas',
+  'Chihuahua', 'Cdmx', 'Durango', 'Estado de México', 'Guanajuato', 'Guerrero',
+  'Hidalgo', 'Jalisco', 'Michoacán', 'Morelos', 'Nayarit', 'Nuevo León', 'Oaxaca',
+  'Puebla', 'Querétaro', 'Quintana Roo', 'San Luis Potosí', 'Sinaloa', 'Sonora',
+  'Tabasco', 'Tamaulipas', 'Tlaxcala', 'Veracruz', 'Yucatán', 'Zacatecas'
+]
 
 export default function InstructorDashboard() {
   const [tab, setTab] = useState(TABS[0])
@@ -13,6 +21,15 @@ export default function InstructorDashboard() {
   const [misEspecialidades, setMisEspecialidades] = useState([])
   const [certificados, setCertificados] = useState([])
   const [msg, setMsg] = useState({ type: '', text: '' })
+
+  // --- Mi perfil ---
+  const [perfil, setPerfil] = useState(null)
+  const [perfilBio, setPerfilBio] = useState('')
+  const [perfilEstado, setPerfilEstado] = useState('')
+  const [guardandoPerfil, setGuardandoPerfil] = useState(false)
+  const [fotoPreview, setFotoPreview] = useState(null)
+  const [fotoFile, setFotoFile] = useState(null)
+  const [subiendoFoto, setSubiendoFoto] = useState(false)
 
   // Formulario de especialidad + precio (sirve tanto para agregar como para editar)
   const [editandoId, setEditandoId] = useState(null) // null = agregando nueva; número = editando esa especialidadId
@@ -43,13 +60,75 @@ export default function InstructorDashboard() {
     }
   }
 
+  async function cargarPerfil() {
+    try {
+      const { data } = await api.get('/instructores/mi-perfil')
+      setPerfil(data)
+      setPerfilBio(data.bio || '')
+      setPerfilEstado(data.estado || '')
+    } catch (err) {
+      setMsg({ type: 'error', text: apiErrorMessage(err) })
+    }
+  }
+
   useEffect(() => {
     cargarTodo()
+    cargarPerfil()
   }, [])
 
   function flash(type, text) {
     setMsg({ type, text })
     setTimeout(() => setMsg({ type: '', text: '' }), 4000)
+  }
+
+  async function guardarPerfil(e) {
+    e.preventDefault()
+    setGuardandoPerfil(true)
+    try {
+      await api.put('/instructores/mi-perfil', { bio: perfilBio, estado: perfilEstado })
+      flash('success', 'Perfil actualizado')
+      cargarPerfil()
+    } catch (err) {
+      flash('error', apiErrorMessage(err))
+    } finally {
+      setGuardandoPerfil(false)
+    }
+  }
+
+  function handleFotoChange(e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const extensionesPermitidas = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
+    if (!extensionesPermitidas.includes(file.type)) {
+      flash('error', 'Formato no permitido. Usa JPG, PNG o WEBP.')
+      return
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      flash('error', 'La imagen no puede pesar más de 5 MB')
+      return
+    }
+
+    setFotoFile(file)
+    setFotoPreview(URL.createObjectURL(file))
+  }
+
+  async function subirFoto() {
+    if (!fotoFile) return
+    setSubiendoFoto(true)
+    try {
+      const formData = new FormData()
+      formData.append('foto', fotoFile)
+      const { data } = await api.post('/instructores/mi-perfil/foto', formData)
+      setPerfil((prev) => ({ ...prev, profilePictureUrl: data.profilePictureUrl }))
+      setFotoFile(null)
+      setFotoPreview(null)
+      flash('success', 'Foto de perfil actualizada')
+    } catch (err) {
+      flash('error', apiErrorMessage(err))
+    } finally {
+      setSubiendoFoto(false)
+    }
   }
 
   const especialidadesDisponibles = especialidades.filter(
@@ -63,6 +142,20 @@ export default function InstructorDashboard() {
     setUsaGrupo(false)
     setPrecioParticipante('')
     setRangos(RANGOS_VACIOS)
+  }
+
+  async function eliminarEspecialidad(especialidadId, nombre) {
+    const confirmado = window.confirm(`¿Eliminar "${nombre}" de tus especialidades? Se borrará también su precio configurado.`)
+    if (!confirmado) return
+
+    try {
+      await api.delete(`/instructores/especialidad/${especialidadId}`)
+      flash('success', 'Especialidad eliminada')
+      if (editandoId === especialidadId) resetForm()
+      cargarTodo()
+    } catch (err) {
+      flash('error', apiErrorMessage(err))
+    }
   }
 
   function abrirEdicion(item) {
@@ -98,7 +191,11 @@ export default function InstructorDashboard() {
     }
     setGuardando(true)
     try {
-      const payload = { especialidadId: Number(nuevaEsp) }
+      const payload = {
+        especialidadId: Number(nuevaEsp),
+        usaParticipante,
+        usaGrupo
+      }
       if (usaParticipante) {
         payload.precioPorParticipante = Number(precioParticipante)
       }
@@ -179,6 +276,82 @@ export default function InstructorDashboard() {
           ))}
         </div>
 
+        {tab === 'Mi perfil' && perfil && (
+          <div className="card">
+            <h3 className="section-title">Foto de perfil</h3>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 28 }}>
+              <div
+                style={{
+                  width: 90,
+                  height: 90,
+                  borderRadius: '50%',
+                  overflow: 'hidden',
+                  backgroundColor: '#eee',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  border: '2px solid #e0e0e0'
+                }}
+              >
+                {fotoPreview || perfil.profilePictureUrl ? (
+                  <img
+                    src={fotoPreview || perfil.profilePictureUrl}
+                    alt="Foto de perfil"
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                ) : (
+                  <span style={{ fontSize: 28, fontWeight: 700, color: '#999' }}>
+                    {perfil.nombreCompleto?.charAt(0) || '?'}
+                  </span>
+                )}
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <label className="btn btn-outline btn-sm" style={{ cursor: 'pointer', width: 'fit-content' }}>
+                  Elegir imagen
+                  <input type="file" accept="image/jpeg,image/png,image/webp" onChange={handleFotoChange} style={{ display: 'none' }} />
+                </label>
+                {fotoFile && (
+                  <button className="btn btn-primary btn-sm" onClick={subirFoto} disabled={subiendoFoto}>
+                    {subiendoFoto ? 'Subiendo…' : 'Guardar foto'}
+                  </button>
+                )}
+                <span style={{ fontSize: '0.78rem', color: 'var(--ink-soft)' }}>
+                  JPG, PNG o WEBP. Máximo 5 MB.
+                </span>
+              </div>
+            </div>
+
+            <h3 className="section-title">Sobre ti</h3>
+            <form onSubmit={guardarPerfil}>
+              <div className="form-group">
+                <label>Biografía</label>
+                <textarea
+                  rows={4}
+                  placeholder="Cuéntale a las empresas sobre tu experiencia como instructor…"
+                  value={perfilBio}
+                  onChange={(e) => setPerfilBio(e.target.value)}
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Estado donde prestas tus servicios</label>
+                <select value={perfilEstado} onChange={(e) => setPerfilEstado(e.target.value)}>
+                  <option value="">Selecciona un estado…</option>
+                  {ESTADOS_MEXICO.map((estado) => (
+                    <option key={estado} value={estado}>{estado}</option>
+                  ))}
+                </select>
+              </div>
+
+              <button className="btn btn-primary" disabled={guardandoPerfil}>
+                {guardandoPerfil ? 'Guardando…' : 'Guardar cambios'}
+              </button>
+            </form>
+          </div>
+        )}
+
         {tab === 'Próximos cursos' && (
           <div className="card">
             {transacciones.length === 0 ? (
@@ -239,9 +412,18 @@ export default function InstructorDashboard() {
                           <PrecioChips p={p} />
                         </div>
                       </div>
-                      <button className="btn btn-outline btn-sm" onClick={() => abrirEdicion(p)}>
-                        Editar precio
-                      </button>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <button className="btn btn-outline btn-sm" onClick={() => abrirEdicion(p)}>
+                          Editar precio
+                        </button>
+                        <button
+                          className="btn btn-outline btn-sm"
+                          style={{ color: '#c0392b', borderColor: '#c0392b' }}
+                          onClick={() => eliminarEspecialidad(p.especialidadId, p.especialidadNombre)}
+                        >
+                          Eliminar
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>

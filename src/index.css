@@ -321,7 +321,7 @@ button, input, select, textarea {
 
 .instructor-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(380px, 380px));
   gap: 16px;
 }
 
@@ -329,10 +329,10 @@ button, input, select, textarea {
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
-  padding: 20px;
+  padding: 20px 22px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 14px;
   position: relative;
 }
 
@@ -452,9 +452,16 @@ button, input, select, textarea {
 
 .instructor-footer {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 12px;
   margin-top: 4px;
+  flex-wrap: nowrap;
+}
+
+.instructor-footer .btn {
+  margin-left: auto;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 /* Stamp badge — evoca un sello de verificación oficial */

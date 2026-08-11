@@ -19,7 +19,7 @@ export default function Navbar() {
         </Link>
 
         <div className="nav-links">
-          <Link to="/">Buscar instructores</Link>
+          <Link to="/ranking">Buscar instructores</Link>
           {user && <Link to="/panel">Mi panel</Link>}
         </div>
 
