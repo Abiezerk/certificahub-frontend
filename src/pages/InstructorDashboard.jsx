@@ -4,7 +4,7 @@ import PrecioChips from '../components/PrecioChips'
 
 const TABS = ['Mi perfil', 'Próximos cursos', 'Especialidades y precios', 'Certificados']
 
-const RANGOS_VACIOS = { rango1Min: 1, rango1Max: 5, rango1Precio: '', rango2Min: 6, rango2Max: 10, rango2Precio: '', rango3Min: 11, rango3Max: 20, rango3Precio: '', rango4Min: 21, rango4Precio: '' }
+const emptyRango = { min: '', max: '', precio: '' }
 
 const ESTADOS_MEXICO = [
   'Aguascalientes', 'Baja California', 'Baja California Sur', 'Campeche', 'Chiapas',
@@ -33,6 +33,7 @@ export default function InstructorDashboard() {
 
   // Formulario de especialidad + precio (sirve tanto para agregar como para editar)
   const [editandoId, setEditandoId] = useState(null) // null = agregando nueva; número = editando esa especialidadId
+  const [formAbierto, setFormAbierto] = useState(false)
   const [nuevaEsp, setNuevaEsp] = useState('')
   const [codigoNOM, setCodigoNOM] = useState('')
   const [nombreOficialCurso, setNombreOficialCurso] = useState('')
@@ -40,7 +41,7 @@ export default function InstructorDashboard() {
   const [usaParticipante, setUsaParticipante] = useState(true)
   const [usaGrupo, setUsaGrupo] = useState(false)
   const [precioParticipante, setPrecioParticipante] = useState('')
-  const [rangos, setRangos] = useState(RANGOS_VACIOS)
+  const [rangosGrupo, setRangosGrupo] = useState([])
   const [guardando, setGuardando] = useState(false)
 
   const [qrTokens, setQrTokens] = useState({})
@@ -138,6 +139,19 @@ export default function InstructorDashboard() {
     (esp) => !misEspecialidades.some((m) => m.especialidadId === esp.id)
   )
 
+  function agregarRango() {
+    if (rangosGrupo.length >= 4) return
+    setRangosGrupo([...rangosGrupo, { ...emptyRango }])
+  }
+
+  function actualizarRango(index, campo, valor) {
+    setRangosGrupo(rangosGrupo.map((r, i) => (i === index ? { ...r, [campo]: valor } : r)))
+  }
+
+  function eliminarRango(index) {
+    setRangosGrupo(rangosGrupo.filter((_, i) => i !== index))
+  }
+
   function resetForm() {
     setEditandoId(null)
     setNuevaEsp('')
@@ -147,7 +161,7 @@ export default function InstructorDashboard() {
     setUsaParticipante(true)
     setUsaGrupo(false)
     setPrecioParticipante('')
-    setRangos(RANGOS_VACIOS)
+    setRangosGrupo([])
   }
 
   async function eliminarEspecialidad(especialidadId, nombre) {
@@ -165,6 +179,7 @@ export default function InstructorDashboard() {
   }
 
   function abrirEdicion(item) {
+    setFormAbierto(true)
     setEditandoId(item.especialidadId)
     setNuevaEsp(String(item.especialidadId))
     setCodigoNOM(item.codigoNOM ?? '')
@@ -175,19 +190,18 @@ export default function InstructorDashboard() {
     setUsaParticipante(tieneParticipante || !tieneGrupo)
     setUsaGrupo(tieneGrupo)
     setPrecioParticipante(item.precioPorParticipante ?? '')
-    setRangos({
-      rango1Min: item.rango1Min ?? 1,
-      rango1Max: item.rango1Max ?? 5,
-      rango1Precio: item.rango1Precio ?? '',
-      rango2Min: item.rango2Min ?? 6,
-      rango2Max: item.rango2Max ?? 10,
-      rango2Precio: item.rango2Precio ?? '',
-      rango3Min: item.rango3Min ?? 11,
-      rango3Max: item.rango3Max ?? 20,
-      rango3Precio: item.rango3Precio ?? '',
-      rango4Min: item.rango4Min ?? 21,
-      rango4Precio: item.rango4Precio ?? ''
+    const rangosCargados = []
+    ;[
+      [item.rango1Min, item.rango1Max, item.rango1Precio],
+      [item.rango2Min, item.rango2Max, item.rango2Precio],
+      [item.rango3Min, item.rango3Max, item.rango3Precio]
+    ].forEach(([min, max, precio]) => {
+      if (precio != null) rangosCargados.push({ min: min ?? '', max: max ?? '', precio })
     })
+    if (item.rango4Precio != null) {
+      rangosCargados.push({ min: item.rango4Min ?? '', max: '', precio: item.rango4Precio })
+    }
+    setRangosGrupo(rangosCargados)
     window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })
   }
 
@@ -197,6 +211,28 @@ export default function InstructorDashboard() {
     if (!usaParticipante && !usaGrupo) {
       flash('error', 'Activa al menos un tipo de precio (por participante o por grupo)')
       return
+    }
+    if (usaGrupo) {
+      if (rangosGrupo.length === 0) {
+        flash('error', 'Agrega al menos un rango de precio por grupo')
+        return
+      }
+      for (const r of rangosGrupo) {
+        if (!r.min || !r.precio) {
+          flash('error', 'Completa el mínimo y el precio de cada rango')
+          return
+        }
+      }
+      const sinMax = rangosGrupo.filter((r) => !r.max)
+      const conMax = rangosGrupo.filter((r) => r.max)
+      if (sinMax.length > 1) {
+        flash('error', 'Solo puede haber un rango sin máximo (el más alto, ej. "20+")')
+        return
+      }
+      if (conMax.length > 3) {
+        flash('error', 'Máximo 3 rangos con límite superior, más 1 rango abierto')
+        return
+      }
     }
     setGuardando(true)
     try {
@@ -212,17 +248,17 @@ export default function InstructorDashboard() {
         payload.precioPorParticipante = Number(precioParticipante)
       }
       if (usaGrupo) {
-        payload.rango1Min = Number(rangos.rango1Min)
-        payload.rango1Max = Number(rangos.rango1Max)
-        payload.rango1Precio = Number(rangos.rango1Precio)
-        payload.rango2Min = Number(rangos.rango2Min)
-        payload.rango2Max = Number(rangos.rango2Max)
-        payload.rango2Precio = Number(rangos.rango2Precio)
-        payload.rango3Min = Number(rangos.rango3Min)
-        payload.rango3Max = Number(rangos.rango3Max)
-        payload.rango3Precio = Number(rangos.rango3Precio)
-        payload.rango4Min = Number(rangos.rango4Min)
-        payload.rango4Precio = Number(rangos.rango4Precio)
+        const sinMax = rangosGrupo.filter((r) => !r.max)
+        const conMax = rangosGrupo.filter((r) => r.max)
+        conMax.forEach((r, i) => {
+          payload[`rango${i + 1}Min`] = Number(r.min)
+          payload[`rango${i + 1}Max`] = Number(r.max)
+          payload[`rango${i + 1}Precio`] = Number(r.precio)
+        })
+        if (sinMax.length === 1) {
+          payload.rango4Min = Number(sinMax[0].min)
+          payload.rango4Precio = Number(sinMax[0].precio)
+        }
       }
       await api.post('/instructores/especialidad-completa', payload)
       flash('success', editandoId ? 'Precio actualizado' : 'Especialidad y precio guardados')
@@ -451,17 +487,47 @@ export default function InstructorDashboard() {
             </div>
 
             <div className="card">
-              <h3 className="section-title">
-                {editandoId ? 'Editar precio' : 'Agregar especialidad con su precio'}
-              </h3>
+              <button
+                type="button"
+                onClick={() => setFormAbierto(!formAbierto)}
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  width: '100%',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: 0,
+                  marginBottom: formAbierto ? 16 : 0,
+                  textAlign: 'left'
+                }}
+              >
+                <h3 className="section-title" style={{ marginBottom: 0 }}>
+                  {editandoId ? 'Editar precio' : 'Agregar especialidad con su precio'}
+                </h3>
+                <span
+                  aria-hidden="true"
+                  style={{
+                    fontSize: '1.1rem',
+                    color: 'var(--ink-soft)',
+                    transition: 'transform 0.2s',
+                    transform: formAbierto ? 'rotate(180deg)' : 'rotate(0deg)'
+                  }}
+                >
+                  ▾
+                </span>
+              </button>
 
-              {!editandoId && especialidadesDisponibles.length === 0 ? (
-                <p style={{ color: 'var(--ink-soft)', fontSize: '0.88rem' }}>
-                  Ya agregaste todas las especialidades disponibles.
-                </p>
-              ) : (
-                <form onSubmit={guardarEspecialidadConPrecio}>
-                  <div className="form-group">
+              {formAbierto && (
+                <>
+                  {!editandoId && especialidadesDisponibles.length === 0 ? (
+                    <p style={{ color: 'var(--ink-soft)', fontSize: '0.88rem' }}>
+                      Ya agregaste todas las especialidades disponibles.
+                    </p>
+                  ) : (
+                    <form onSubmit={guardarEspecialidadConPrecio}>
+                      <div className="form-group">
                     <label>Especialidad</label>
                     {editandoId ? (
                       <p style={{ fontWeight: 600 }}>
@@ -533,37 +599,66 @@ export default function InstructorDashboard() {
                   {usaGrupo && (
                     <div className="form-group">
                       <label>Rangos de grupo (participantes → precio total, MXN)</label>
-                      <div className="form-row" style={{ marginBottom: 8 }}>
-                        <input type="number" placeholder="Min" value={rangos.rango1Min}
-                          onChange={(e) => setRangos({ ...rangos, rango1Min: e.target.value })} />
-                        <input type="number" placeholder="Max" value={rangos.rango1Max}
-                          onChange={(e) => setRangos({ ...rangos, rango1Max: e.target.value })} />
-                        <input type="number" placeholder="Precio" required value={rangos.rango1Precio}
-                          onChange={(e) => setRangos({ ...rangos, rango1Precio: e.target.value })} />
-                      </div>
-                      <div className="form-row" style={{ marginBottom: 8 }}>
-                        <input type="number" placeholder="Min" value={rangos.rango2Min}
-                          onChange={(e) => setRangos({ ...rangos, rango2Min: e.target.value })} />
-                        <input type="number" placeholder="Max" value={rangos.rango2Max}
-                          onChange={(e) => setRangos({ ...rangos, rango2Max: e.target.value })} />
-                        <input type="number" placeholder="Precio" required value={rangos.rango2Precio}
-                          onChange={(e) => setRangos({ ...rangos, rango2Precio: e.target.value })} />
-                      </div>
-                      <div className="form-row" style={{ marginBottom: 8 }}>
-                        <input type="number" placeholder="Min" value={rangos.rango3Min}
-                          onChange={(e) => setRangos({ ...rangos, rango3Min: e.target.value })} />
-                        <input type="number" placeholder="Max" value={rangos.rango3Max}
-                          onChange={(e) => setRangos({ ...rangos, rango3Max: e.target.value })} />
-                        <input type="number" placeholder="Precio" required value={rangos.rango3Precio}
-                          onChange={(e) => setRangos({ ...rangos, rango3Precio: e.target.value })} />
-                      </div>
-                      <div className="form-row">
-                        <input type="number" placeholder="Desde (21+)" value={rangos.rango4Min}
-                          onChange={(e) => setRangos({ ...rangos, rango4Min: e.target.value })} />
-                        <input type="number" placeholder="Precio" required value={rangos.rango4Precio}
-                          onChange={(e) => setRangos({ ...rangos, rango4Precio: e.target.value })} />
-                        <span />
-                      </div>
+
+                      {rangosGrupo.length === 0 && (
+                        <p style={{ fontSize: '0.85rem', color: 'var(--ink-soft)', marginBottom: 10 }}>
+                          Aún no agregaste ningún rango.
+                        </p>
+                      )}
+
+                      {rangosGrupo.map((r, i) => (
+                        <div
+                          key={i}
+                          style={{
+                            display: 'grid',
+                            gridTemplateColumns: '1fr 1fr 1fr auto',
+                            gap: 8,
+                            marginBottom: 8,
+                            alignItems: 'center'
+                          }}
+                        >
+                          <input
+                            type="number"
+                            min="1"
+                            placeholder="Mínimo"
+                            value={r.min}
+                            onChange={(e) => actualizarRango(i, 'min', e.target.value)}
+                          />
+                          <input
+                            type="number"
+                            min="1"
+                            placeholder="Máximo (vacío = sin límite)"
+                            value={r.max}
+                            onChange={(e) => actualizarRango(i, 'max', e.target.value)}
+                          />
+                          <input
+                            type="number"
+                            min="1"
+                            placeholder="Precio total"
+                            value={r.precio}
+                            onChange={(e) => actualizarRango(i, 'precio', e.target.value)}
+                          />
+                          <button
+                            type="button"
+                            className="btn btn-ghost btn-sm"
+                            onClick={() => eliminarRango(i)}
+                            title="Eliminar rango"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ))}
+
+                      {rangosGrupo.length < 4 && (
+                        <button type="button" className="btn btn-outline btn-sm" onClick={agregarRango}>
+                          + Agregar rango
+                        </button>
+                      )}
+
+                      <p style={{ fontSize: '0.78rem', color: 'var(--ink-soft)', marginTop: 8 }}>
+                        Deja el campo "Máximo" vacío para indicar "X o más participantes" (ej. 20+). Solo se
+                        permite un rango sin máximo.
+                      </p>
                     </div>
                   )}
 
@@ -578,6 +673,8 @@ export default function InstructorDashboard() {
                     )}
                   </div>
                 </form>
+              )}
+                </>
               )}
             </div>
           </>

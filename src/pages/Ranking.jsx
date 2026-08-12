@@ -214,6 +214,7 @@ export default function Ranking() {
                 <th className="col-posicion">#</th>
                 <th className="col-instructor">INSTRUCTOR</th>
                 <th className="col-estado">ESTADO</th>
+                <th className="col-especialidades">ESPECIALIDADES</th>
                 <th
                   className="col-ordenable col-calificacion"
                   onClick={() => setOrdenadoPor("calificacion")}
@@ -272,6 +273,30 @@ export default function Ranking() {
                     </div>
                   </td>
                   <td className="col-estado">{instructor.estado || "—"}</td>
+                  <td className="col-especialidades">
+                    {!instructor.especialidades || instructor.especialidades.length === 0 ? (
+                      <span className="especialidades-vacio">—</span>
+                    ) : (
+                      <div className="especialidades-chips">
+                        {instructor.especialidades.slice(0, 2).map((esp) => (
+                          <span className="chip-especialidad" key={esp.id}>
+                            {esp.nombre}
+                          </span>
+                        ))}
+                        {instructor.especialidades.length > 2 && (
+                          <span
+                            className="chip-especialidad chip-mas"
+                            title={instructor.especialidades
+                              .slice(2)
+                              .map((e) => e.nombre)
+                              .join(", ")}
+                          >
+                            +{instructor.especialidades.length - 2}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </td>
                   <td className="col-calificacion">
                     {instructor.ratingPromedio.toFixed(1)}/5
                   </td>
