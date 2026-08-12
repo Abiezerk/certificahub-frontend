@@ -3,6 +3,14 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { apiErrorMessage } from '../api/client'
 
+const ESTADOS_MEXICO = [
+  'Aguascalientes', 'Baja California', 'Baja California Sur', 'Campeche', 'Chiapas',
+  'Chihuahua', 'Cdmx', 'Durango', 'Estado de México', 'Guanajuato', 'Guerrero',
+  'Hidalgo', 'Jalisco', 'Michoacán', 'Morelos', 'Nayarit', 'Nuevo León', 'Oaxaca',
+  'Puebla', 'Querétaro', 'Quintana Roo', 'San Luis Potosí', 'Sinaloa', 'Sonora',
+  'Tabasco', 'Tamaulipas', 'Tlaxcala', 'Veracruz', 'Yucatán', 'Zacatecas'
+]
+
 const emptyInstructor = {
   email: '', password: '', firstName: '', lastName: '', phoneNumber: '', estado: '', bio: ''
 }
@@ -56,40 +64,49 @@ export default function Register() {
 
         {error && <div className="banner banner-error">{error}</div>}
 
+        <p style={{ fontSize: '0.78rem', color: 'var(--ink-soft)', marginBottom: 16 }}>
+          Los campos marcados con <span style={{ color: 'var(--alert)' }}>*</span> son obligatorios.
+        </p>
+
         {role === 'Instructor' ? (
           <form onSubmit={handleSubmit}>
             <div className="form-row">
               <div className="form-group">
-                <label>Nombre</label>
-                <input required value={instructorForm.firstName}
+                <label>Nombre <span style={{ color: 'var(--alert)' }}>*</span></label>
+                <input required placeholder="Juan" value={instructorForm.firstName}
                   onChange={(e) => setInstructorForm({ ...instructorForm, firstName: e.target.value })} />
               </div>
               <div className="form-group">
-                <label>Apellido</label>
-                <input required value={instructorForm.lastName}
+                <label>Apellido <span style={{ color: 'var(--alert)' }}>*</span></label>
+                <input required placeholder="Pérez" value={instructorForm.lastName}
                   onChange={(e) => setInstructorForm({ ...instructorForm, lastName: e.target.value })} />
               </div>
             </div>
             <div className="form-group">
-              <label>Correo</label>
-              <input type="email" required value={instructorForm.email}
+              <label>Correo <span style={{ color: 'var(--alert)' }}>*</span></label>
+              <input type="email" required placeholder="juan@correo.com" value={instructorForm.email}
                 onChange={(e) => setInstructorForm({ ...instructorForm, email: e.target.value })} />
             </div>
             <div className="form-group">
-              <label>Contraseña</label>
-              <input type="password" required minLength={6} value={instructorForm.password}
+              <label>Contraseña <span style={{ color: 'var(--alert)' }}>*</span></label>
+              <input type="password" required minLength={6} placeholder="Mínimo 6 caracteres" value={instructorForm.password}
                 onChange={(e) => setInstructorForm({ ...instructorForm, password: e.target.value })} />
             </div>
             <div className="form-row">
               <div className="form-group">
                 <label>Teléfono</label>
-                <input value={instructorForm.phoneNumber}
+                <input placeholder="664 123 4567" value={instructorForm.phoneNumber}
                   onChange={(e) => setInstructorForm({ ...instructorForm, phoneNumber: e.target.value })} />
               </div>
               <div className="form-group">
-                <label>Estado</label>
-                <input placeholder="CDMX, Jalisco…" value={instructorForm.estado}
-                  onChange={(e) => setInstructorForm({ ...instructorForm, estado: e.target.value })} />
+                <label>Estado <span style={{ color: 'var(--alert)' }}>*</span></label>
+                <select required value={instructorForm.estado}
+                  onChange={(e) => setInstructorForm({ ...instructorForm, estado: e.target.value })}>
+                  <option value="" disabled>Selecciona tu estado…</option>
+                  {ESTADOS_MEXICO.map((estado) => (
+                    <option key={estado} value={estado}>{estado}</option>
+                  ))}
+                </select>
               </div>
             </div>
             <div className="form-group">
@@ -106,46 +123,46 @@ export default function Register() {
           <form onSubmit={handleSubmit}>
             <div className="form-row">
               <div className="form-group">
-                <label>Tu nombre</label>
-                <input required value={empresaForm.firstName}
+                <label>Tu nombre <span style={{ color: 'var(--alert)' }}>*</span></label>
+                <input required placeholder="Ana" value={empresaForm.firstName}
                   onChange={(e) => setEmpresaForm({ ...empresaForm, firstName: e.target.value })} />
               </div>
               <div className="form-group">
-                <label>Tu apellido</label>
-                <input required value={empresaForm.lastName}
+                <label>Tu apellido <span style={{ color: 'var(--alert)' }}>*</span></label>
+                <input required placeholder="García López" value={empresaForm.lastName}
                   onChange={(e) => setEmpresaForm({ ...empresaForm, lastName: e.target.value })} />
               </div>
             </div>
             <div className="form-group">
-              <label>Correo</label>
-              <input type="email" required value={empresaForm.email}
+              <label>Correo <span style={{ color: 'var(--alert)' }}>*</span></label>
+              <input type="email" required placeholder="contacto@tuempresa.com" value={empresaForm.email}
                 onChange={(e) => setEmpresaForm({ ...empresaForm, email: e.target.value })} />
             </div>
             <div className="form-group">
-              <label>Contraseña</label>
-              <input type="password" required minLength={6} value={empresaForm.password}
+              <label>Contraseña <span style={{ color: 'var(--alert)' }}>*</span></label>
+              <input type="password" required minLength={6} placeholder="Mínimo 6 caracteres" value={empresaForm.password}
                 onChange={(e) => setEmpresaForm({ ...empresaForm, password: e.target.value })} />
             </div>
             <div className="form-group">
-              <label>Razón social</label>
-              <input required value={empresaForm.razonSocial}
+              <label>Razón social <span style={{ color: 'var(--alert)' }}>*</span></label>
+              <input required placeholder="Comercializadora Ejemplo S.A. de C.V." value={empresaForm.razonSocial}
                 onChange={(e) => setEmpresaForm({ ...empresaForm, razonSocial: e.target.value })} />
             </div>
             <div className="form-row">
               <div className="form-group">
-                <label>RFC</label>
-                <input required value={empresaForm.rfc}
+                <label>RFC <span style={{ color: 'var(--alert)' }}>*</span></label>
+                <input required placeholder="CEM-010203-AB1" value={empresaForm.rfc}
                   onChange={(e) => setEmpresaForm({ ...empresaForm, rfc: e.target.value })} />
               </div>
               <div className="form-group">
                 <label>Departamento RRHH</label>
-                <input value={empresaForm.nombreDepartamentoRRHH}
+                <input placeholder="Recursos Humanos" value={empresaForm.nombreDepartamentoRRHH}
                   onChange={(e) => setEmpresaForm({ ...empresaForm, nombreDepartamentoRRHH: e.target.value })} />
               </div>
             </div>
             <div className="form-group">
               <label>Domicilio fiscal</label>
-              <input value={empresaForm.domicilioFiscal}
+              <input placeholder="Calle, número, colonia, ciudad, CP" value={empresaForm.domicilioFiscal}
                 onChange={(e) => setEmpresaForm({ ...empresaForm, domicilioFiscal: e.target.value })} />
             </div>
             <button className="btn btn-primary btn-block" disabled={loading}>

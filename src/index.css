@@ -558,6 +558,11 @@ button, input, select, textarea {
   min-height: 80px;
 }
 
+.form-group input:focus::placeholder,
+.form-group textarea:focus::placeholder {
+  color: transparent;
+}
+
 .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;

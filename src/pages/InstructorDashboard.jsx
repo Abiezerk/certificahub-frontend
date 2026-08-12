@@ -34,6 +34,9 @@ export default function InstructorDashboard() {
   // Formulario de especialidad + precio (sirve tanto para agregar como para editar)
   const [editandoId, setEditandoId] = useState(null) // null = agregando nueva; número = editando esa especialidadId
   const [nuevaEsp, setNuevaEsp] = useState('')
+  const [codigoNOM, setCodigoNOM] = useState('')
+  const [nombreOficialCurso, setNombreOficialCurso] = useState('')
+  const [duracionHoras, setDuracionHoras] = useState('')
   const [usaParticipante, setUsaParticipante] = useState(true)
   const [usaGrupo, setUsaGrupo] = useState(false)
   const [precioParticipante, setPrecioParticipante] = useState('')
@@ -138,6 +141,9 @@ export default function InstructorDashboard() {
   function resetForm() {
     setEditandoId(null)
     setNuevaEsp('')
+    setCodigoNOM('')
+    setNombreOficialCurso('')
+    setDuracionHoras('')
     setUsaParticipante(true)
     setUsaGrupo(false)
     setPrecioParticipante('')
@@ -161,6 +167,9 @@ export default function InstructorDashboard() {
   function abrirEdicion(item) {
     setEditandoId(item.especialidadId)
     setNuevaEsp(String(item.especialidadId))
+    setCodigoNOM(item.codigoNOM ?? '')
+    setNombreOficialCurso(item.nombreOficialCurso ?? '')
+    setDuracionHoras(item.duracionHoras ?? '')
     const tieneParticipante = item.precioPorParticipante != null
     const tieneGrupo = item.rango1Precio != null || item.rango2Precio != null || item.rango3Precio != null || item.rango4Precio != null
     setUsaParticipante(tieneParticipante || !tieneGrupo)
@@ -193,6 +202,9 @@ export default function InstructorDashboard() {
     try {
       const payload = {
         especialidadId: Number(nuevaEsp),
+        codigoNOM: codigoNOM || null,
+        nombreOficialCurso: nombreOficialCurso || null,
+        duracionHoras: duracionHoras ? Number(duracionHoras) : null,
         usaParticipante,
         usaGrupo
       }
@@ -408,6 +420,14 @@ export default function InstructorDashboard() {
                     <div className="row-item" key={p.especialidadId}>
                       <div className="row-main">
                         <span className="row-title">{p.especialidadNombre}</span>
+                        {(p.codigoNOM || p.nombreOficialCurso || p.duracionHoras) && (
+                          <span className="row-sub">
+                            {p.codigoNOM && <>{p.codigoNOM}</>}
+                            {p.codigoNOM && p.nombreOficialCurso && ' · '}
+                            {p.nombreOficialCurso && <>{p.nombreOficialCurso}</>}
+                            {p.duracionHoras && <> · {p.duracionHoras}h</>}
+                          </span>
+                        )}
                         <div style={{ marginTop: 4 }}>
                           <PrecioChips p={p} />
                         </div>
@@ -455,6 +475,35 @@ export default function InstructorDashboard() {
                         ))}
                       </select>
                     )}
+                  </div>
+
+                  <div className="form-group">
+                    <label>Código NOM oficial</label>
+                    <input
+                      placeholder="Ej. NOM-009-STPS-2011"
+                      value={codigoNOM}
+                      onChange={(e) => setCodigoNOM(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label>Nombre oficial del curso (para el DC-3)</label>
+                    <input
+                      placeholder="Ej. CONDICIONES DE SEGURIDAD PARA REALIZAR TRABAJOS EN ALTURA"
+                      value={nombreOficialCurso}
+                      onChange={(e) => setNombreOficialCurso(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label>Duración en horas</label>
+                    <input
+                      type="number"
+                      min="1"
+                      placeholder="Ej. 8"
+                      value={duracionHoras}
+                      onChange={(e) => setDuracionHoras(e.target.value)}
+                    />
                   </div>
 
                   <div className="checkbox-row" style={{ marginBottom: 16 }}>

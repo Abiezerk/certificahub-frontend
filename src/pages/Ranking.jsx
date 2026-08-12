@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import apiClient from "../api/client";
 import PremiumBadge from "../components/PremiumBadge";
-import PrecioChips from "../components/PrecioChips";
+import InstructorDetailModal from "../components/InstructorDetailModal";
 import "../styles/Ranking.css";
 
 const ESTADOS_MEXICO = [
@@ -39,7 +38,6 @@ const ESTADOS_MEXICO = [
 ];
 
 export default function Ranking() {
-  const navigate = useNavigate();
   const [instructores, setInstructores] = useState([]);
   const [filtroEspecialidad, setFiltroEspecialidad] = useState("todas");
   const [filtroCalificacion, setFiltroCalificacion] = useState("cualquiera");
@@ -299,69 +297,7 @@ export default function Ranking() {
 
       {/* Modal detalle instructor */}
       {instructorSeleccionado && (
-        <div className="modal-overlay" onClick={cerrarDetalle}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <button className="btn-cerrar" onClick={cerrarDetalle}>
-              ✕
-            </button>
-            <div className="modal-header">
-              <div className="avatar-grande">{instructorSeleccionado.nombreCompleto.charAt(0)}</div>
-              <div className="header-info">
-                <h2>{instructorSeleccionado.nombreCompleto}</h2>
-                <p className="especialidades-modal">
-                  {instructorSeleccionado.especialidades?.map((e) => e.nombre).join(", ") ||
-                    "Sin especialidades"}
-                </p>
-                <p className="estado-modal">📍 {instructorSeleccionado.estado || "No especificado"}</p>
-              </div>
-            </div>
-
-            <div className="modal-stats">
-              <div className="stat">
-                <span className="stat-valor">
-                  {instructorSeleccionado.ratingPromedio.toFixed(1)}⭐
-                </span>
-                <span className="stat-label">Calificación</span>
-              </div>
-              <div className="stat">
-                <span className="stat-valor">
-                  {instructorSeleccionado.totalEvaluaciones || 0}
-                </span>
-                <span className="stat-label">Evaluaciones</span>
-              </div>
-              <div className="stat">
-                <span className="stat-valor">{instructorSeleccionado.totalCursos || 0}</span>
-                <span className="stat-label">Cursos</span>
-              </div>
-            </div>
-
-            {instructorSeleccionado.bio && (
-              <div className="modal-bio">
-                <h4>Sobre el instructor</h4>
-                <p>{instructorSeleccionado.bio}</p>
-              </div>
-            )}
-
-            {instructorSeleccionado.precios && instructorSeleccionado.precios.length > 0 && (
-              <div className="modal-precios">
-                <h4>Precios por especialidad</h4>
-                <PrecioChips precios={instructorSeleccionado.precios} />
-              </div>
-            )}
-
-            <div className="modal-acciones">
-              <button
-                onClick={() => {
-                  navigate("/login");
-                  cerrarDetalle();
-                }}
-                className="btn-contratar"
-              >
-                Contactar & Contratar
-              </button>
-            </div>
-          </div>
-        </div>
+        <InstructorDetailModal instructor={instructorSeleccionado} onClose={cerrarDetalle} />
       )}
     </div>
   );
