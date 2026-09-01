@@ -21,6 +21,8 @@ export default function InstructorDashboard() {
   const [misEspecialidades, setMisEspecialidades] = useState([])
   const [certificados, setCertificados] = useState([])
   const [msg, setMsg] = useState({ type: '', text: '' })
+  const [acordeonesAbiertos, setAcordeonesAbiertos] = useState({})
+  const [descargandoZip, setDescargandoZip] = useState({})
 
   // --- Mi perfil ---
   const [perfil, setPerfil] = useState(null)
@@ -31,8 +33,8 @@ export default function InstructorDashboard() {
   const [fotoFile, setFotoFile] = useState(null)
   const [subiendoFoto, setSubiendoFoto] = useState(false)
 
-  // Formulario de especialidad + precio (sirve tanto para agregar como para editar)
-  const [editandoId, setEditandoId] = useState(null) // null = agregando nueva; número = editando esa especialidadId
+  // Formulario de especialidad + precio
+  const [editandoId, setEditandoId] = useState(null)
   const [formAbierto, setFormAbierto] = useState(false)
   const [nuevaEsp, setNuevaEsp] = useState('')
   const [codigoNOM, setCodigoNOM] = useState('')
@@ -45,7 +47,8 @@ export default function InstructorDashboard() {
   const [guardando, setGuardando] = useState(false)
 
   const [qrTokens, setQrTokens] = useState({})
-  const [certForm, setCertForm] = useState({ transaccionId: '', participanteNombre: '' })
+  const [certLoteForm, setCertLoteForm] = useState({ transaccionId: '', archivo: null })
+  const [generandoLote, setGenerandoLote] = useState(false)
 
   async function cargarTodo() {
     try {
@@ -290,17 +293,104 @@ export default function InstructorDashboard() {
     }
   }
 
-  async function generarCertificado(e) {
-    e.preventDefault()
+  async function descargarPlantillaExcel() {
     try {
-      await api.post(`/certificados/generar/${certForm.transaccionId}`, {
-        participanteNombre: certForm.participanteNombre
-      })
-      flash('success', 'Certificado DC-3 generado')
-      setCertForm({ transaccionId: '', participanteNombre: '' })
+      const response = await api.get('/certificados/plantilla-excel', { responseType: 'blob' })
+      const url = window.URL.createObjectURL(new Blob([response.data]))
+      const link = document.createElement('a')
+      link.href = url
+      link.setAttribute('download', 'Plantilla_Participantes_DC3.xlsx')
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      window.URL.revokeObjectURL(url)
+    } catch (err) {
+      flash('error', apiErrorMessage(err, 'No se pudo descargar la plantilla'))
+    }
+  }
+
+  function handleArchivoLote(e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setCertLoteForm({ ...certLoteForm, archivo: file })
+  }
+
+  async function generarCertificadosLote(e) {
+    e.preventDefault()
+    if (!certLoteForm.transaccionId) {
+      flash('error', 'Selecciona el curso')
+      return
+    }
+    if (!certLoteForm.archivo) {
+      flash('error', 'Sube el Excel con los datos de los participantes')
+      return
+    }
+    setGenerandoLote(true)
+    try {
+      const formData = new FormData()
+      formData.append('transaccionId', certLoteForm.transaccionId)
+      formData.append('archivo', certLoteForm.archivo)
+      const { data } = await api.post('/certificados/generar-lote', formData)
+      flash('success', data.message || 'Certificados generados')
+      setCertLoteForm({ transaccionId: '', archivo: null })
       cargarTodo()
     } catch (err) {
-      flash('error', apiErrorMessage(err))
+      flash('error', apiErrorMessage(err, 'No se pudieron generar los certificados'))
+    } finally {
+      setGenerandoLote(false)
+    }
+  }
+
+  // Funciones para acordeones de certificados
+  function agruparCertificadosPorCurso(certs) {
+    const agrupados = certs.reduce((acc, cert) => {
+      const curso = cert.especialidadNombre
+      if (!acc[curso]) {
+        acc[curso] = []
+      }
+      acc[curso].push(cert)
+      return acc
+    }, {})
+
+    // Calcular info por curso (fecha y empresa del primer cert)
+    const resultado = {}
+    for (const [curso, certsCurso] of Object.entries(agrupados)) {
+      resultado[curso] = {
+        certs: certsCurso,
+        fechaCurso: certsCurso[0]?.fechaCurso,
+        empresaNombre: certsCurso[0]?.empresaNombre,
+        transaccionId: certsCurso[0]?.transaccionId // agregar transactionId para poder descargar ZIP
+      }
+    }
+    return resultado
+  }
+
+  function toggleAcordeon(curso) {
+    setAcordeonesAbiertos((prev) => ({
+      ...prev,
+      [curso]: !prev[curso]
+    }))
+  }
+
+  async function descargarZipCurso(transaccionId, nombreCurso) {
+    setDescargandoZip((prev) => ({ ...prev, [transaccionId]: true }))
+    try {
+      const response = await api.get(`/certificados/descargar-lote-zip/${transaccionId}`, {
+        responseType: 'blob'
+      })
+      const url = window.URL.createObjectURL(new Blob([response.data]))
+      const link = document.createElement('a')
+      link.href = url
+      link.setAttribute('download', `Certificados_${nombreCurso}.zip`)
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      window.URL.revokeObjectURL(url)
+      flash('success', 'ZIP descargado correctamente')
+    } catch (err) {
+      flash('error', apiErrorMessage(err, 'No se pudo descargar el ZIP'))
+    } finally {
+      setDescargandoZip((prev) => ({ ...prev, [transaccionId]: false }))
     }
   }
 
@@ -683,14 +773,27 @@ export default function InstructorDashboard() {
         {tab === 'Certificados' && (
           <>
             <div className="card">
-              <h3 className="section-title">Generar certificado DC-3</h3>
-              <form onSubmit={generarCertificado} className="form-row" style={{ alignItems: 'end' }}>
-                <div className="form-group" style={{ marginBottom: 0 }}>
+              <h3 className="section-title">Certificados DC-3 en lote</h3>
+              <p style={{ fontSize: '0.88rem', color: 'var(--ink-soft)', marginBottom: 16 }}>
+                Descarga esta plantilla y pásasela a la empresa para que capture los datos de los
+                participantes. Tú solo llenas los datos del curso (periodo, área temática y tu nombre
+                como agente capacitador). Cuando la tengas lista, súbela para generar todos los DC-3
+                automáticamente.
+              </p>
+              <button className="btn btn-outline" onClick={descargarPlantillaExcel}>
+                Descargar plantilla de Excel
+              </button>
+            </div>
+
+            <div className="card">
+              <h3 className="section-title">Generar certificados en lote</h3>
+              <form onSubmit={generarCertificadosLote}>
+                <div className="form-group">
                   <label>Curso</label>
                   <select
                     required
-                    value={certForm.transaccionId}
-                    onChange={(e) => setCertForm({ ...certForm, transaccionId: e.target.value })}
+                    value={certLoteForm.transaccionId}
+                    onChange={(e) => setCertLoteForm({ ...certLoteForm, transaccionId: e.target.value })}
                   >
                     <option value="">Selecciona un curso…</option>
                     {transacciones.map((t) => (
@@ -700,30 +803,104 @@ export default function InstructorDashboard() {
                     ))}
                   </select>
                 </div>
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label>Nombre del participante</label>
-                  <input
-                    required
-                    value={certForm.participanteNombre}
-                    onChange={(e) => setCertForm({ ...certForm, participanteNombre: e.target.value })}
-                  />
+                <div className="form-group">
+                  <label>Excel con los datos de los participantes (ya lleno)</label>
+                  <input type="file" accept=".xlsx" required onChange={handleArchivoLote} />
                 </div>
-                <button className="btn btn-primary">Generar DC-3</button>
+                <button className="btn btn-primary" disabled={generandoLote}>
+                  {generandoLote ? 'Generando…' : 'Generar certificados'}
+                </button>
               </form>
             </div>
 
             <div className="card">
+              <h3 className="section-title">Certificados generados</h3>
               {certificados.length === 0 ? (
                 <div className="empty-state">Aún no has generado certificados.</div>
               ) : (
-                <div className="row-list">
-                  {certificados.map((c) => (
-                    <div className="row-item" key={c.id}>
-                      <div className="row-main">
-                        <span className="row-title">{c.participanteNombre} · {c.especialidadNombre}</span>
-                        <span className="row-sub">{c.empresaNombre} · {new Date(c.fechaCurso).toLocaleDateString('es-MX')}</span>
-                      </div>
-                      <span className="serial">{c.numeroSerie}</span>
+                <div>
+                  {Object.entries(agruparCertificadosPorCurso(certificados)).map(([curso, datoCurso]) => (
+                    <div key={curso} style={{ marginBottom: 16, border: '1px solid #e0e0e0', borderRadius: 6, overflow: 'hidden' }}>
+                      {/* ACORDEÓN HEADER */}
+                      <button
+                        type="button"
+                        onClick={() => toggleAcordeon(curso)}
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          width: '100%',
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          padding: '12px 16px',
+                          textAlign: 'left',
+                          backgroundColor: '#f5f5f5',
+                          borderRadius: 0
+                        }}
+                      >
+                        <div style={{ flex: 1 }}>
+                          <span className="row-title" style={{ marginBottom: 0, display: 'block' }}>{curso}</span>
+                          <span style={{ fontSize: '0.8rem', color: 'var(--ink-soft)' }}>
+                            {datoCurso.empresaNombre} · {new Date(datoCurso.fechaCurso).toLocaleDateString('es-MX')} · {datoCurso.certs.length} certificado{datoCurso.certs.length !== 1 ? 's' : ''}
+                          </span>
+                        </div>
+                        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
+                          <button
+                            type="button"
+                            className="btn btn-outline btn-sm"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              descargarZipCurso(datoCurso.transaccionId, curso)
+                            }}
+                            disabled={descargandoZip[datoCurso.transaccionId]}
+                          >
+                            {descargandoZip[datoCurso.transaccionId] ? 'Descargando…' : '📥 ZIP'}
+                          </button>
+                          <span
+                            aria-hidden="true"
+                            style={{
+                              fontSize: '1.1rem',
+                              color: 'var(--ink-soft)',
+                              transition: 'transform 0.2s',
+                              transform: acordeonesAbiertos[curso] ? 'rotate(180deg)' : 'rotate(0deg)'
+                            }}
+                          >
+                            ▾
+                          </span>
+                        </div>
+                      </button>
+
+                      {/* ACORDEÓN CONTENIDO */}
+                      {acordeonesAbiertos[curso] && (
+                        <div style={{ padding: '0 0 16px 0', borderTop: '1px solid #e0e0e0' }}>
+                          <div className="row-list">
+                            {datoCurso.certs.map((c) => (
+                              <div className="row-item" key={c.id}>
+                                <div className="row-main">
+                                  <span className="row-title">{c.participanteNombre}</span>
+                                  <span className="row-sub">{c.empresaNombre} · {new Date(c.fechaCurso).toLocaleDateString('es-MX')}</span>
+                                </div>
+                                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                                  <span className="serial">{c.numeroSerie}</span>
+                                  {c.archivoUrl ? (
+                                    <a
+                                      href={c.archivoUrl}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="btn btn-outline btn-sm"
+                                    >
+                                      Descargar
+                                    </a>
+                                  ) : (
+                                    <span style={{ fontSize: '0.8rem', color: 'var(--ink-soft)' }}>Sin archivo</span>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
