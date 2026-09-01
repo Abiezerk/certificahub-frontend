@@ -49,6 +49,9 @@ export default function InstructorDashboard() {
   const [qrTokens, setQrTokens] = useState({})
   const [certLoteForm, setCertLoteForm] = useState({ transaccionId: '', archivo: null })
   const [generandoLote, setGenerandoLote] = useState(false)
+  const [certsSeleccionados, setCertsSeleccionados] = useState({})
+  const [eliminandoId, setEliminandoId] = useState({})
+  const [eliminandoLote, setEliminandoLote] = useState(false)
 
   async function cargarTodo() {
     try {
@@ -391,6 +394,79 @@ export default function InstructorDashboard() {
       flash('error', apiErrorMessage(err, 'No se pudo descargar el ZIP'))
     } finally {
       setDescargandoZip((prev) => ({ ...prev, [transaccionId]: false }))
+    }
+  }
+
+  function toggleSeleccionCert(id) {
+    setCertsSeleccionados((prev) => ({ ...prev, [id]: !prev[id] }))
+  }
+
+  function idsEliminablesDeCurso(datoCurso) {
+    return datoCurso.certs.filter((c) => c.estado !== 'Eliminado').map((c) => c.id)
+  }
+
+  function cursoCompletoSeleccionado(datoCurso) {
+    const ids = idsEliminablesDeCurso(datoCurso)
+    return ids.length > 0 && ids.every((id) => certsSeleccionados[id])
+  }
+
+  function toggleSeleccionCurso(datoCurso) {
+    const ids = idsEliminablesDeCurso(datoCurso)
+    const todosSeleccionados = cursoCompletoSeleccionado(datoCurso)
+    setCertsSeleccionados((prev) => {
+      const next = { ...prev }
+      ids.forEach((id) => {
+        next[id] = !todosSeleccionados
+      })
+      return next
+    })
+  }
+
+  const idsSeleccionados = Object.entries(certsSeleccionados)
+    .filter(([, seleccionado]) => seleccionado)
+    .map(([id]) => id)
+
+  async function eliminarCertificado(cert) {
+    const confirmado = window.confirm(
+      `¿Eliminar el certificado de "${cert.participanteNombre}"? El archivo se borrará permanentemente, aunque el registro se conserva en tu historial.`
+    )
+    if (!confirmado) return
+
+    setEliminandoId((prev) => ({ ...prev, [cert.id]: true }))
+    try {
+      await api.delete(`/certificados/${cert.id}`)
+      flash('success', 'Certificado eliminado')
+      setCertsSeleccionados((prev) => {
+        const next = { ...prev }
+        delete next[cert.id]
+        return next
+      })
+      cargarTodo()
+    } catch (err) {
+      flash('error', apiErrorMessage(err, 'No se pudo eliminar el certificado'))
+    } finally {
+      setEliminandoId((prev) => ({ ...prev, [cert.id]: false }))
+    }
+  }
+
+  async function eliminarCertificadosSeleccionados() {
+    if (idsSeleccionados.length === 0) return
+
+    const confirmado = window.confirm(
+      `¿Eliminar ${idsSeleccionados.length} certificado(s) seleccionado(s)? Los archivos se borrarán permanentemente, aunque los registros se conservan en tu historial.`
+    )
+    if (!confirmado) return
+
+    setEliminandoLote(true)
+    try {
+      const { data } = await api.delete('/certificados/lote', { data: { certificadoIds: idsSeleccionados } })
+      flash('success', data.message || 'Certificados eliminados')
+      setCertsSeleccionados({})
+      cargarTodo()
+    } catch (err) {
+      flash('error', apiErrorMessage(err, 'No se pudieron eliminar los certificados'))
+    } finally {
+      setEliminandoLote(false)
     }
   }
 
@@ -814,7 +890,24 @@ export default function InstructorDashboard() {
             </div>
 
             <div className="card">
-              <h3 className="section-title">Certificados generados</h3>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, flexWrap: 'wrap', gap: 8 }}>
+                <h3 className="section-title" style={{ marginBottom: 0 }}>Certificados generados</h3>
+                {idsSeleccionados.length > 0 && (
+                  <button
+                    type="button"
+                    className="btn btn-outline btn-sm"
+                    style={{ color: '#c0392b', borderColor: '#c0392b' }}
+                    onClick={eliminarCertificadosSeleccionados}
+                    disabled={eliminandoLote}
+                  >
+                    {eliminandoLote ? 'Eliminando…' : `Eliminar seleccionados (${idsSeleccionados.length})`}
+                  </button>
+                )}
+              </div>
+              <p style={{ fontSize: '0.82rem', color: 'var(--ink-soft)', marginBottom: 16 }}>
+                Los archivos de los certificados se eliminan automáticamente 5 días después de generarse para
+                ahorrar espacio de almacenamiento. También puedes eliminarlos manualmente antes de ese plazo.
+              </p>
               {certificados.length === 0 ? (
                 <div className="empty-state">Aún no has generado certificados.</div>
               ) : (
@@ -846,6 +939,19 @@ export default function InstructorDashboard() {
                           </span>
                         </div>
                         <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
+                          {idsEliminablesDeCurso(datoCurso).length > 0 && (
+                            <label
+                              style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.8rem', color: 'var(--ink-soft)', cursor: 'pointer' }}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={cursoCompletoSeleccionado(datoCurso)}
+                                onChange={() => toggleSeleccionCurso(datoCurso)}
+                              />
+                              Seleccionar todos
+                            </label>
+                          )}
                           <button
                             type="button"
                             className="btn btn-outline btn-sm"
@@ -875,29 +981,63 @@ export default function InstructorDashboard() {
                       {acordeonesAbiertos[curso] && (
                         <div style={{ padding: '0 0 16px 0', borderTop: '1px solid #e0e0e0' }}>
                           <div className="row-list">
-                            {datoCurso.certs.map((c) => (
-                              <div className="row-item" key={c.id}>
-                                <div className="row-main">
-                                  <span className="row-title">{c.participanteNombre}</span>
-                                  <span className="row-sub">{c.empresaNombre} · {new Date(c.fechaCurso).toLocaleDateString('es-MX')}</span>
+                            {datoCurso.certs.map((c) => {
+                              const eliminado = c.estado === 'Eliminado'
+                              return (
+                                <div className="row-item" key={c.id}>
+                                  <div className="row-main" style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                                    {!eliminado && (
+                                      <input
+                                        type="checkbox"
+                                        checked={!!certsSeleccionados[c.id]}
+                                        onChange={() => toggleSeleccionCert(c.id)}
+                                        style={{ marginTop: 4 }}
+                                        aria-label={`Seleccionar certificado de ${c.participanteNombre}`}
+                                      />
+                                    )}
+                                    <div>
+                                      <span className="row-title">{c.participanteNombre}</span>
+                                      <span className="row-sub">{c.empresaNombre} · {new Date(c.fechaCurso).toLocaleDateString('es-MX')}</span>
+                                      {eliminado ? (
+                                        <div style={{ fontSize: '0.78rem', color: '#c0392b', marginTop: 2 }}>Eliminado</div>
+                                      ) : c.diasRestantes !== null && c.diasRestantes !== undefined ? (
+                                        <div style={{ fontSize: '0.78rem', color: c.diasRestantes <= 1 ? '#c0392b' : 'var(--ink-soft)', marginTop: 2 }}>
+                                          {c.diasRestantes === 0
+                                            ? 'Se elimina hoy'
+                                            : `Disponible ${c.diasRestantes} día${c.diasRestantes !== 1 ? 's' : ''} más`}
+                                        </div>
+                                      ) : null}
+                                    </div>
+                                  </div>
+                                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                                    <span className="serial">{c.numeroSerie}</span>
+                                    {c.archivoUrl ? (
+                                      <a
+                                        href={c.archivoUrl}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="btn btn-outline btn-sm"
+                                      >
+                                        Descargar
+                                      </a>
+                                    ) : (
+                                      <span style={{ fontSize: '0.8rem', color: 'var(--ink-soft)' }}>Sin archivo</span>
+                                    )}
+                                    {!eliminado && (
+                                      <button
+                                        type="button"
+                                        className="btn btn-outline btn-sm"
+                                        style={{ color: '#c0392b', borderColor: '#c0392b' }}
+                                        onClick={() => eliminarCertificado(c)}
+                                        disabled={eliminandoId[c.id]}
+                                      >
+                                        {eliminandoId[c.id] ? 'Eliminando…' : 'Eliminar'}
+                                      </button>
+                                    )}
+                                  </div>
                                 </div>
-                                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                                  <span className="serial">{c.numeroSerie}</span>
-                                  {c.archivoUrl ? (
-                                    <a
-                                      href={c.archivoUrl}
-                                      target="_blank"
-                                      rel="noreferrer"
-                                      className="btn btn-outline btn-sm"
-                                    >
-                                      Descargar
-                                    </a>
-                                  ) : (
-                                    <span style={{ fontSize: '0.8rem', color: 'var(--ink-soft)' }}>Sin archivo</span>
-                                  )}
-                                </div>
-                              </div>
-                            ))}
+                              )
+                            })}
                           </div>
                         </div>
                       )}
