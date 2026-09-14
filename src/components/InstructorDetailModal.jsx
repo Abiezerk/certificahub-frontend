@@ -3,6 +3,36 @@ import api, { apiErrorMessage } from '../api/client'
 import { useAuth } from '../context/AuthContext'
 import PrecioChips from './PrecioChips'
 
+function soloDigitos(valor) {
+  return valor.replace(/[^0-9]/g, '')
+}
+
+function sanitizarEntero(valor, min, max) {
+  const limpio = soloDigitos(String(valor))
+  if (limpio === '') return ''
+  const n = Math.min(max, Math.max(min, parseInt(limpio, 10)))
+  return String(n)
+}
+
+// Combina fecha (YYYY-MM-DD) + hora en formato 12h a un DateTime ISO (sin zona) para el backend.
+// Valida estrictamente cada componente; regresa null si algo no es un valor esperado.
+function construirFechaHoraISO(fechaCurso, hora, minuto, ampm) {
+  if (!fechaCurso || !/^\d{4}-\d{2}-\d{2}$/.test(fechaCurso)) return null
+
+  const h = parseInt(hora, 10)
+  const m = parseInt(minuto, 10)
+  if (!Number.isInteger(h) || h < 1 || h > 12) return null
+  if (!Number.isInteger(m) || m < 0 || m > 59) return null
+  if (ampm !== 'AM' && ampm !== 'PM') return null
+
+  let hora24 = h % 12
+  if (ampm === 'PM') hora24 += 12
+
+  const hh = String(hora24).padStart(2, '0')
+  const mm = String(m).padStart(2, '0')
+  return `${fechaCurso}T${hh}:${mm}:00`
+}
+
 function calcularEstimado(precioEsp, participantes) {
   if (!precioEsp || !participantes) return null
   const tramos = [
@@ -33,6 +63,7 @@ export default function InstructorDetailModal({ instructor, onClose }) {
     numeroParticipantes: 5,
     descripcion: ''
   })
+  const [horaForm, setHoraForm] = useState({ hora: '', minuto: '', ampm: 'AM' })
   const [contratarMsg, setContratarMsg] = useState({ type: '', text: '' })
   const [enviando, setEnviando] = useState(false)
 
@@ -41,6 +72,7 @@ export default function InstructorDetailModal({ instructor, onClose }) {
     setCargando(true)
     setContratarMsg({ type: '', text: '' })
     setContratarForm({ especialidadId: '', fechaCurso: '', numeroParticipantes: 5, descripcion: '' })
+    setHoraForm({ hora: '', minuto: '', ampm: 'AM' })
 
     api.get(`/instructores/${instructor.id}/especialidades-precios`)
       .then((res) => { if (activo) setPrecios(res.data) })
@@ -54,15 +86,36 @@ export default function InstructorDetailModal({ instructor, onClose }) {
   const precioEspSeleccionada = conPrecio.find((p) => p.especialidadId === Number(contratarForm.especialidadId))
   const precioEstimado = calcularEstimado(precioEspSeleccionada, Number(contratarForm.numeroParticipantes) || 0)
 
+  function handleHoraChange(e) {
+    setHoraForm({ ...horaForm, hora: sanitizarEntero(e.target.value, 1, 12) })
+  }
+
+  function handleMinutoChange(e) {
+    const limpio = sanitizarEntero(e.target.value, 0, 59)
+    setHoraForm({ ...horaForm, minuto: limpio === '' ? '' : limpio.padStart(2, '0') })
+  }
+
   async function enviarContratacion(e) {
     e.preventDefault()
-    setEnviando(true)
     setContratarMsg({ type: '', text: '' })
+
+    const fechaHoraISO = construirFechaHoraISO(
+      contratarForm.fechaCurso,
+      horaForm.hora,
+      horaForm.minuto,
+      horaForm.ampm
+    )
+    if (!fechaHoraISO) {
+      setContratarMsg({ type: 'error', text: 'Indica una fecha y una hora válidas (hora 1-12, minutos 0-59, AM o PM).' })
+      return
+    }
+
+    setEnviando(true)
     try {
       await api.post('/transacciones', {
         instructorId: instructor.id,
         especialidadId: Number(contratarForm.especialidadId),
-        fechaCurso: contratarForm.fechaCurso,
+        fechaCurso: fechaHoraISO,
         numeroParticipantes: Number(contratarForm.numeroParticipantes),
         descripcion: contratarForm.descripcion
       })
@@ -170,6 +223,53 @@ export default function InstructorDetailModal({ instructor, onClose }) {
                     value={contratarForm.numeroParticipantes}
                     onChange={(e) => setContratarForm({ ...contratarForm, numeroParticipantes: e.target.value })}
                   />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label>Hora del curso</label>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    min="1"
+                    max="12"
+                    placeholder="HH"
+                    required
+                    value={horaForm.hora}
+                    onChange={handleHoraChange}
+                    style={{ width: 64, textAlign: 'center' }}
+                    aria-label="Hora"
+                  />
+                  <span style={{ fontWeight: 700 }}>:</span>
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    min="0"
+                    max="59"
+                    placeholder="MM"
+                    required
+                    value={horaForm.minuto}
+                    onChange={handleMinutoChange}
+                    style={{ width: 64, textAlign: 'center' }}
+                    aria-label="Minutos"
+                  />
+                  <div style={{ display: 'flex', gap: 4, marginLeft: 4 }}>
+                    <button
+                      type="button"
+                      className={`btn btn-sm ${horaForm.ampm === 'AM' ? 'btn-primary' : 'btn-outline'}`}
+                      onClick={() => setHoraForm({ ...horaForm, ampm: 'AM' })}
+                    >
+                      AM
+                    </button>
+                    <button
+                      type="button"
+                      className={`btn btn-sm ${horaForm.ampm === 'PM' ? 'btn-primary' : 'btn-outline'}`}
+                      onClick={() => setHoraForm({ ...horaForm, ampm: 'PM' })}
+                    >
+                      PM
+                    </button>
+                  </div>
                 </div>
               </div>
 

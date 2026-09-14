@@ -2,7 +2,32 @@ import { useEffect, useState } from 'react'
 import api, { apiErrorMessage } from '../api/client'
 import PrecioChips from '../components/PrecioChips'
 
-const TABS = ['Mi perfil', 'Próximos cursos', 'Especialidades y precios', 'Certificados']
+const TABS = ['Mi perfil', 'Próximos cursos', 'Calendario', 'Especialidades y precios', 'Certificados']
+
+const DIAS_SEMANA = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
+
+const MESES = [
+  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+]
+
+function mismoDia(a, b) {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate()
+}
+
+function generarCeldasDelMes(mesActual) {
+  const primerDiaMes = new Date(mesActual.getFullYear(), mesActual.getMonth(), 1)
+  const inicioGrilla = new Date(primerDiaMes)
+  inicioGrilla.setDate(inicioGrilla.getDate() - primerDiaMes.getDay())
+
+  const celdas = []
+  const cursor = new Date(inicioGrilla)
+  for (let i = 0; i < 42; i++) {
+    celdas.push(new Date(cursor))
+    cursor.setDate(cursor.getDate() + 1)
+  }
+  return celdas
+}
 
 const emptyRango = { min: '', max: '', precio: '' }
 
@@ -23,6 +48,8 @@ export default function InstructorDashboard() {
   const [msg, setMsg] = useState({ type: '', text: '' })
   const [acordeonesAbiertos, setAcordeonesAbiertos] = useState({})
   const [descargandoZip, setDescargandoZip] = useState({})
+  const [enviandoLote, setEnviandoLote] = useState({})
+  const [mostrarEliminados, setMostrarEliminados] = useState(false)
 
   // --- Mi perfil ---
   const [perfil, setPerfil] = useState(null)
@@ -52,6 +79,11 @@ export default function InstructorDashboard() {
   const [certsSeleccionados, setCertsSeleccionados] = useState({})
   const [eliminandoId, setEliminandoId] = useState({})
   const [eliminandoLote, setEliminandoLote] = useState(false)
+
+  // --- Calendario de cursos ---
+  const hoy = new Date()
+  const [mesActual, setMesActual] = useState(new Date(hoy.getFullYear(), hoy.getMonth(), 1))
+  const [diaSeleccionado, setDiaSeleccionado] = useState(hoy)
 
   async function cargarTodo() {
     try {
@@ -375,6 +407,18 @@ export default function InstructorDashboard() {
     }))
   }
 
+  // Un curso "eliminado" es aquel donde ya no queda ningún certificado vivo:
+  // se conserva en la base de datos para auditoría, pero deja de mostrarse junto a los activos.
+  function separarCursosPorEstado(gruposCursos) {
+    const activos = {}
+    const eliminados = {}
+    for (const [curso, datoCurso] of Object.entries(gruposCursos)) {
+      const destino = datoCurso.certs.every((c) => c.estado === 'Eliminado') ? eliminados : activos
+      destino[curso] = datoCurso
+    }
+    return { activos, eliminados }
+  }
+
   async function descargarZipCurso(transaccionId, nombreCurso) {
     setDescargandoZip((prev) => ({ ...prev, [transaccionId]: true }))
     try {
@@ -397,12 +441,30 @@ export default function InstructorDashboard() {
     }
   }
 
+  async function enviarCertificadosAEmpresa(transaccionId) {
+    setEnviandoLote((prev) => ({ ...prev, [transaccionId]: true }))
+    try {
+      const { data } = await api.post(`/certificados/enviar-lote/${transaccionId}`)
+      flash('success', data.message || 'Certificados enviados a la empresa')
+      cargarTodo()
+    } catch (err) {
+      flash('error', apiErrorMessage(err, 'No se pudieron enviar los certificados'))
+    } finally {
+      setEnviandoLote((prev) => ({ ...prev, [transaccionId]: false }))
+    }
+  }
+
   function toggleSeleccionCert(id) {
     setCertsSeleccionados((prev) => ({ ...prev, [id]: !prev[id] }))
   }
 
   function idsEliminablesDeCurso(datoCurso) {
     return datoCurso.certs.filter((c) => c.estado !== 'Eliminado').map((c) => c.id)
+  }
+
+  function todosEnviados(datoCurso) {
+    const vigentes = datoCurso.certs.filter((c) => c.estado !== 'Eliminado')
+    return vigentes.length > 0 && vigentes.every((c) => c.fechaEnvio)
   }
 
   function cursoCompletoSeleccionado(datoCurso) {
@@ -469,6 +531,180 @@ export default function InstructorDashboard() {
       setEliminandoLote(false)
     }
   }
+
+  function cambiarMes(delta) {
+    setMesActual((prev) => new Date(prev.getFullYear(), prev.getMonth() + delta, 1))
+  }
+
+  function irAHoy() {
+    const ahora = new Date()
+    setMesActual(new Date(ahora.getFullYear(), ahora.getMonth(), 1))
+    setDiaSeleccionado(ahora)
+  }
+
+  function eventosDelDia(fecha) {
+    return transacciones
+      .filter((t) => mismoDia(new Date(t.fechaCurso), fecha))
+      .sort((a, b) => new Date(a.fechaCurso) - new Date(b.fechaCurso))
+  }
+
+  const celdasCalendario = generarCeldasDelMes(mesActual)
+  const eventosDiaSeleccionado = diaSeleccionado ? eventosDelDia(diaSeleccionado) : []
+
+  function renderAcordeonCurso(curso, datoCurso) {
+    return (
+      <div key={curso} style={{ marginBottom: 16, border: '1px solid #e0e0e0', borderRadius: 6, overflow: 'hidden' }}>
+        {/* ACORDEÓN HEADER */}
+        <button
+          type="button"
+          onClick={() => toggleAcordeon(curso)}
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            width: '100%',
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            padding: '12px 16px',
+            textAlign: 'left',
+            backgroundColor: '#f5f5f5',
+            borderRadius: 0
+          }}
+        >
+          <div style={{ flex: 1 }}>
+            <span className="row-title" style={{ marginBottom: 0, display: 'block' }}>{curso}</span>
+            <span style={{ fontSize: '0.8rem', color: 'var(--ink-soft)' }}>
+              {datoCurso.empresaNombre} · {new Date(datoCurso.fechaCurso).toLocaleDateString('es-MX')} · {datoCurso.certs.length} certificado{datoCurso.certs.length !== 1 ? 's' : ''}
+            </span>
+          </div>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
+            {idsEliminablesDeCurso(datoCurso).length > 0 && (
+              <label
+                style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.8rem', color: 'var(--ink-soft)', cursor: 'pointer' }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <input
+                  type="checkbox"
+                  checked={cursoCompletoSeleccionado(datoCurso)}
+                  onChange={() => toggleSeleccionCurso(datoCurso)}
+                />
+                Seleccionar todos
+              </label>
+            )}
+            <button
+              type="button"
+              className="btn btn-outline btn-sm"
+              onClick={(e) => {
+                e.stopPropagation()
+                enviarCertificadosAEmpresa(datoCurso.transaccionId)
+              }}
+              disabled={enviandoLote[datoCurso.transaccionId] || todosEnviados(datoCurso)}
+              title={todosEnviados(datoCurso) ? 'Ya se enviaron todos los certificados de este curso a la empresa' : 'Enviar los certificados firmados a la empresa'}
+            >
+              {enviandoLote[datoCurso.transaccionId]
+                ? 'Enviando…'
+                : todosEnviados(datoCurso)
+                  ? '✓ Enviado a empresa'
+                  : '✉️ Enviar a empresa'}
+            </button>
+            <button
+              type="button"
+              className="btn btn-outline btn-sm"
+              onClick={(e) => {
+                e.stopPropagation()
+                descargarZipCurso(datoCurso.transaccionId, curso)
+              }}
+              disabled={descargandoZip[datoCurso.transaccionId]}
+            >
+              {descargandoZip[datoCurso.transaccionId] ? 'Descargando…' : '📥 ZIP'}
+            </button>
+            <span
+              aria-hidden="true"
+              style={{
+                fontSize: '1.1rem',
+                color: 'var(--ink-soft)',
+                transition: 'transform 0.2s',
+                transform: acordeonesAbiertos[curso] ? 'rotate(180deg)' : 'rotate(0deg)'
+              }}
+            >
+              ▾
+            </span>
+          </div>
+        </button>
+
+        {/* ACORDEÓN CONTENIDO */}
+        {acordeonesAbiertos[curso] && (
+          <div style={{ padding: '0 0 16px 0', borderTop: '1px solid #e0e0e0' }}>
+            <div className="row-list">
+              {datoCurso.certs.map((c) => {
+                const eliminado = c.estado === 'Eliminado'
+                return (
+                  <div className="row-item" key={c.id}>
+                    <div className="row-main" style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                      {!eliminado && (
+                        <input
+                          type="checkbox"
+                          checked={!!certsSeleccionados[c.id]}
+                          onChange={() => toggleSeleccionCert(c.id)}
+                          style={{ marginTop: 4 }}
+                          aria-label={`Seleccionar certificado de ${c.participanteNombre}`}
+                        />
+                      )}
+                      <div>
+                        <span className="row-title">{c.participanteNombre}</span>
+                        <span className="row-sub">{c.empresaNombre} · {new Date(c.fechaCurso).toLocaleDateString('es-MX')}</span>
+                        {eliminado ? (
+                          <div style={{ fontSize: '0.78rem', color: '#c0392b', marginTop: 2 }}>Eliminado</div>
+                        ) : c.diasRestantes !== null && c.diasRestantes !== undefined ? (
+                          <div style={{ fontSize: '0.78rem', color: c.diasRestantes <= 1 ? '#c0392b' : 'var(--ink-soft)', marginTop: 2 }}>
+                            {c.diasRestantes === 0
+                              ? 'Se elimina hoy'
+                              : `Disponible ${c.diasRestantes} día${c.diasRestantes !== 1 ? 's' : ''} más`}
+                          </div>
+                        ) : null}
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                      <span className="serial">{c.numeroSerie}</span>
+                      {c.archivoUrl ? (
+                        <a
+                          href={c.archivoUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="btn btn-outline btn-sm"
+                        >
+                          Descargar
+                        </a>
+                      ) : (
+                        <span style={{ fontSize: '0.8rem', color: 'var(--ink-soft)' }}>Sin archivo</span>
+                      )}
+                      {!eliminado && (
+                        <button
+                          type="button"
+                          className="btn btn-outline btn-sm"
+                          style={{ color: '#c0392b', borderColor: '#c0392b' }}
+                          onClick={() => eliminarCertificado(c)}
+                          disabled={eliminandoId[c.id]}
+                        >
+                          {eliminandoId[c.id] ? 'Eliminando…' : 'Eliminar'}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  const { activos: gruposActivos, eliminados: gruposEliminados } = separarCursosPorEstado(
+    agruparCertificadosPorCurso(certificados)
+  )
+  const cantidadCursosEliminados = Object.keys(gruposEliminados).length
 
   return (
     <div className="page">
@@ -579,9 +815,16 @@ export default function InstructorDashboard() {
                     <div className="row-main">
                       <span className="row-title">{t.empresaNombre} · {t.especialidadNombre}</span>
                       <span className="row-sub">
-                        {new Date(t.fechaCurso).toLocaleDateString('es-MX')} · {t.numeroParticipantes} participantes · $
+                        {new Date(t.fechaCurso).toLocaleDateString('es-MX')} ·{' '}
+                        {new Date(t.fechaCurso).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })} ·{' '}
+                        {t.numeroParticipantes} participantes · $
                         {t.precioTotal.toLocaleString('es-MX')}
                       </span>
+                      {t.descripcion && (
+                        <span className="row-sub" style={{ display: 'block', marginTop: 2, fontStyle: 'italic' }}>
+                          "{t.descripcion}"
+                        </span>
+                      )}
                       {qrTokens[t.id] && (
                         <div className="token-box">
                           Token QR: {qrTokens[t.id].token}
@@ -607,6 +850,124 @@ export default function InstructorDashboard() {
                 ))}
               </div>
             )}
+          </div>
+        )}
+
+        {tab === 'Calendario' && (
+          <div className="card">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <button type="button" className="btn btn-outline btn-sm" onClick={() => cambiarMes(-1)} aria-label="Mes anterior">
+                  ‹
+                </button>
+                <h3 className="section-title" style={{ marginBottom: 0, minWidth: 180, textAlign: 'center' }}>
+                  {MESES[mesActual.getMonth()]} {mesActual.getFullYear()}
+                </h3>
+                <button type="button" className="btn btn-outline btn-sm" onClick={() => cambiarMes(1)} aria-label="Mes siguiente">
+                  ›
+                </button>
+              </div>
+              <button type="button" className="btn btn-ghost btn-sm" onClick={irAHoy}>
+                Hoy
+              </button>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4, marginBottom: 4 }}>
+              {DIAS_SEMANA.map((d) => (
+                <div key={d} style={{ textAlign: 'center', fontSize: '0.75rem', fontWeight: 600, color: 'var(--ink-soft)', padding: '4px 0' }}>
+                  {d}
+                </div>
+              ))}
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4 }}>
+              {celdasCalendario.map((fecha) => {
+                const enMesActual = fecha.getMonth() === mesActual.getMonth()
+                const esHoy = mismoDia(fecha, hoy)
+                const esSeleccionado = diaSeleccionado && mismoDia(fecha, diaSeleccionado)
+                const eventos = eventosDelDia(fecha)
+                const eventosVisibles = eventos.slice(0, 2)
+                const restantes = eventos.length - eventosVisibles.length
+
+                return (
+                  <button
+                    key={fecha.toISOString()}
+                    type="button"
+                    onClick={() => setDiaSeleccionado(fecha)}
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'stretch',
+                      textAlign: 'left',
+                      minHeight: 76,
+                      padding: 6,
+                      borderRadius: 6,
+                      border: esSeleccionado ? '2px solid var(--seal-dark)' : '1px solid #e0e0e0',
+                      backgroundColor: enMesActual ? '#fff' : '#f7f7f7',
+                      cursor: 'pointer',
+                      opacity: enMesActual ? 1 : 0.55
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontSize: '0.78rem',
+                        fontWeight: esHoy ? 700 : 500,
+                        color: esHoy ? 'var(--seal-dark)' : 'inherit',
+                        marginBottom: 4
+                      }}
+                    >
+                      {fecha.getDate()}
+                    </span>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                      {eventosVisibles.map((ev) => (
+                        <span
+                          key={ev.id}
+                          className={`status-pill status-${ev.estado.toLowerCase()}`}
+                          style={{ display: 'block', width: '100%', textAlign: 'left', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                        >
+                          {new Date(ev.fechaCurso).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })} {ev.especialidadNombre}
+                        </span>
+                      ))}
+                      {restantes > 0 && (
+                        <span style={{ fontSize: '0.7rem', color: 'var(--ink-soft)' }}>+{restantes} más</span>
+                      )}
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
+
+            <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid #e0e0e0' }}>
+              <h4 style={{ fontSize: '0.9rem', marginBottom: 10 }}>
+                {diaSeleccionado
+                  ? diaSeleccionado.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+                  : 'Selecciona un día'}
+              </h4>
+              {eventosDiaSeleccionado.length === 0 ? (
+                <p style={{ fontSize: '0.85rem', color: 'var(--ink-soft)' }}>No tienes cursos programados este día.</p>
+              ) : (
+                <div className="row-list">
+                  {eventosDiaSeleccionado.map((ev) => (
+                    <div className="row-item" key={ev.id}>
+                      <div className="row-main">
+                        <span className="row-title">
+                          {new Date(ev.fechaCurso).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })} · {ev.especialidadNombre}
+                        </span>
+                        <span className="row-sub">
+                          {ev.empresaNombre} · {ev.numeroParticipantes} participantes · ${ev.precioTotal.toLocaleString('es-MX')}
+                        </span>
+                        {ev.descripcion && (
+                          <span className="row-sub" style={{ display: 'block', marginTop: 4, fontStyle: 'italic' }}>
+                            "{ev.descripcion}"
+                          </span>
+                        )}
+                      </div>
+                      <span className={`status-pill status-${ev.estado.toLowerCase()}`}>{ev.estado}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         )}
 
@@ -912,137 +1273,32 @@ export default function InstructorDashboard() {
                 <div className="empty-state">Aún no has generado certificados.</div>
               ) : (
                 <div>
-                  {Object.entries(agruparCertificadosPorCurso(certificados)).map(([curso, datoCurso]) => (
-                    <div key={curso} style={{ marginBottom: 16, border: '1px solid #e0e0e0', borderRadius: 6, overflow: 'hidden' }}>
-                      {/* ACORDEÓN HEADER */}
+                  {Object.keys(gruposActivos).length === 0 && cantidadCursosEliminados === 0 ? (
+                    <div className="empty-state">Aún no has generado certificados.</div>
+                  ) : Object.keys(gruposActivos).length === 0 ? (
+                    <p style={{ fontSize: '0.85rem', color: 'var(--ink-soft)' }}>
+                      No tienes certificados activos. Todos tus cursos generados ya fueron eliminados.
+                    </p>
+                  ) : (
+                    Object.entries(gruposActivos).map(([curso, datoCurso]) => renderAcordeonCurso(curso, datoCurso))
+                  )}
+
+                  {cantidadCursosEliminados > 0 && (
+                    <div style={{ marginTop: 16 }}>
                       <button
                         type="button"
-                        onClick={() => toggleAcordeon(curso)}
-                        style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                          width: '100%',
-                          background: 'none',
-                          border: 'none',
-                          cursor: 'pointer',
-                          padding: '12px 16px',
-                          textAlign: 'left',
-                          backgroundColor: '#f5f5f5',
-                          borderRadius: 0
-                        }}
+                        className="btn btn-ghost btn-sm"
+                        onClick={() => setMostrarEliminados((v) => !v)}
                       >
-                        <div style={{ flex: 1 }}>
-                          <span className="row-title" style={{ marginBottom: 0, display: 'block' }}>{curso}</span>
-                          <span style={{ fontSize: '0.8rem', color: 'var(--ink-soft)' }}>
-                            {datoCurso.empresaNombre} · {new Date(datoCurso.fechaCurso).toLocaleDateString('es-MX')} · {datoCurso.certs.length} certificado{datoCurso.certs.length !== 1 ? 's' : ''}
-                          </span>
-                        </div>
-                        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
-                          {idsEliminablesDeCurso(datoCurso).length > 0 && (
-                            <label
-                              style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.8rem', color: 'var(--ink-soft)', cursor: 'pointer' }}
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <input
-                                type="checkbox"
-                                checked={cursoCompletoSeleccionado(datoCurso)}
-                                onChange={() => toggleSeleccionCurso(datoCurso)}
-                              />
-                              Seleccionar todos
-                            </label>
-                          )}
-                          <button
-                            type="button"
-                            className="btn btn-outline btn-sm"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              descargarZipCurso(datoCurso.transaccionId, curso)
-                            }}
-                            disabled={descargandoZip[datoCurso.transaccionId]}
-                          >
-                            {descargandoZip[datoCurso.transaccionId] ? 'Descargando…' : '📥 ZIP'}
-                          </button>
-                          <span
-                            aria-hidden="true"
-                            style={{
-                              fontSize: '1.1rem',
-                              color: 'var(--ink-soft)',
-                              transition: 'transform 0.2s',
-                              transform: acordeonesAbiertos[curso] ? 'rotate(180deg)' : 'rotate(0deg)'
-                            }}
-                          >
-                            ▾
-                          </span>
-                        </div>
+                        {mostrarEliminados ? 'Ocultar' : 'Ver'} eliminados ({cantidadCursosEliminados})
                       </button>
-
-                      {/* ACORDEÓN CONTENIDO */}
-                      {acordeonesAbiertos[curso] && (
-                        <div style={{ padding: '0 0 16px 0', borderTop: '1px solid #e0e0e0' }}>
-                          <div className="row-list">
-                            {datoCurso.certs.map((c) => {
-                              const eliminado = c.estado === 'Eliminado'
-                              return (
-                                <div className="row-item" key={c.id}>
-                                  <div className="row-main" style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-                                    {!eliminado && (
-                                      <input
-                                        type="checkbox"
-                                        checked={!!certsSeleccionados[c.id]}
-                                        onChange={() => toggleSeleccionCert(c.id)}
-                                        style={{ marginTop: 4 }}
-                                        aria-label={`Seleccionar certificado de ${c.participanteNombre}`}
-                                      />
-                                    )}
-                                    <div>
-                                      <span className="row-title">{c.participanteNombre}</span>
-                                      <span className="row-sub">{c.empresaNombre} · {new Date(c.fechaCurso).toLocaleDateString('es-MX')}</span>
-                                      {eliminado ? (
-                                        <div style={{ fontSize: '0.78rem', color: '#c0392b', marginTop: 2 }}>Eliminado</div>
-                                      ) : c.diasRestantes !== null && c.diasRestantes !== undefined ? (
-                                        <div style={{ fontSize: '0.78rem', color: c.diasRestantes <= 1 ? '#c0392b' : 'var(--ink-soft)', marginTop: 2 }}>
-                                          {c.diasRestantes === 0
-                                            ? 'Se elimina hoy'
-                                            : `Disponible ${c.diasRestantes} día${c.diasRestantes !== 1 ? 's' : ''} más`}
-                                        </div>
-                                      ) : null}
-                                    </div>
-                                  </div>
-                                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                                    <span className="serial">{c.numeroSerie}</span>
-                                    {c.archivoUrl ? (
-                                      <a
-                                        href={c.archivoUrl}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        className="btn btn-outline btn-sm"
-                                      >
-                                        Descargar
-                                      </a>
-                                    ) : (
-                                      <span style={{ fontSize: '0.8rem', color: 'var(--ink-soft)' }}>Sin archivo</span>
-                                    )}
-                                    {!eliminado && (
-                                      <button
-                                        type="button"
-                                        className="btn btn-outline btn-sm"
-                                        style={{ color: '#c0392b', borderColor: '#c0392b' }}
-                                        onClick={() => eliminarCertificado(c)}
-                                        disabled={eliminandoId[c.id]}
-                                      >
-                                        {eliminandoId[c.id] ? 'Eliminando…' : 'Eliminar'}
-                                      </button>
-                                    )}
-                                  </div>
-                                </div>
-                              )
-                            })}
-                          </div>
+                      {mostrarEliminados && (
+                        <div style={{ marginTop: 12 }}>
+                          {Object.entries(gruposEliminados).map(([curso, datoCurso]) => renderAcordeonCurso(curso, datoCurso))}
                         </div>
                       )}
                     </div>
-                  ))}
+                  )}
                 </div>
               )}
             </div>
