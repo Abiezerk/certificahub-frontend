@@ -377,9 +377,14 @@ export default function InstructorDashboard() {
   }
 
   // Funciones para acordeones de certificados
+  // Nota: se agrupa por especialidad + transaccionId (no solo por especialidad),
+  // porque dos transacciones distintas pueden compartir la misma especialidad y antes
+  // sus certificados se mezclaban en un solo acordeón (los botones ZIP/Enviar solo
+  // tomaban la transaccionId del primer certificado del grupo). `nombreCurso` guarda
+  // el nombre a mostrar por separado de la clave de agrupación.
   function agruparCertificadosPorCurso(certs) {
     const agrupados = certs.reduce((acc, cert) => {
-      const curso = cert.especialidadNombre
+      const curso = `${cert.especialidadNombre}__${cert.transaccionId}`
       if (!acc[curso]) {
         acc[curso] = []
       }
@@ -392,6 +397,7 @@ export default function InstructorDashboard() {
     for (const [curso, certsCurso] of Object.entries(agrupados)) {
       resultado[curso] = {
         certs: certsCurso,
+        nombreCurso: certsCurso[0]?.especialidadNombre,
         fechaCurso: certsCurso[0]?.fechaCurso,
         empresaNombre: certsCurso[0]?.empresaNombre,
         transaccionId: certsCurso[0]?.transaccionId // agregar transactionId para poder descargar ZIP
@@ -573,7 +579,7 @@ export default function InstructorDashboard() {
           }}
         >
           <div style={{ flex: 1 }}>
-            <span className="row-title" style={{ marginBottom: 0, display: 'block' }}>{curso}</span>
+            <span className="row-title" style={{ marginBottom: 0, display: 'block' }}>{datoCurso.nombreCurso}</span>
             <span style={{ fontSize: '0.8rem', color: 'var(--ink-soft)' }}>
               {datoCurso.empresaNombre} · {new Date(datoCurso.fechaCurso).toLocaleDateString('es-MX')} · {datoCurso.certs.length} certificado{datoCurso.certs.length !== 1 ? 's' : ''}
             </span>
@@ -613,7 +619,7 @@ export default function InstructorDashboard() {
               className="btn btn-outline btn-sm"
               onClick={(e) => {
                 e.stopPropagation()
-                descargarZipCurso(datoCurso.transaccionId, curso)
+                descargarZipCurso(datoCurso.transaccionId, datoCurso.nombreCurso)
               }}
               disabled={descargandoZip[datoCurso.transaccionId]}
             >
