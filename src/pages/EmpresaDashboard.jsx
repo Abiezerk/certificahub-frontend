@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import api, { apiErrorMessage } from '../api/client'
+import AnaliticaPanel from '../components/AnaliticaPanel'
 
-const TABS = ['Mis cursos contratados', 'Certificados recibidos']
+const TABS = ['Mis cursos contratados', 'Certificados recibidos', 'Estadísticas']
 
 export default function EmpresaDashboard() {
   const [tab, setTab] = useState(TABS[0])
@@ -83,10 +84,18 @@ export default function EmpresaDashboard() {
     const certsDelCurso = certificadosDeCurso(t.id)
     return (
       <div key={t.id} style={{ marginBottom: 16, border: '1px solid #e0e0e0', borderRadius: 6, overflow: 'hidden' }}>
-        {/* ACORDEÓN HEADER */}
-        <button
-          type="button"
+        {/* ACORDEÓN HEADER — div con role="button" en vez de <button> real porque contiene
+            botones propios (Cancelar, Ocultar…), y un <button> no puede anidar otro <button> */}
+        <div
+          role="button"
+          tabIndex={0}
           onClick={() => toggleAcordeon(t.id)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault()
+              toggleAcordeon(t.id)
+            }
+          }}
           style={{
             display: 'flex',
             justifyContent: 'space-between',
@@ -153,7 +162,7 @@ export default function EmpresaDashboard() {
               ▾
             </span>
           </div>
-        </button>
+        </div>
 
         {/* ACORDEÓN CONTENIDO */}
         {acordeonesAbiertos[t.id] && (
@@ -240,6 +249,8 @@ export default function EmpresaDashboard() {
             )}
           </div>
         )}
+
+        {tab === 'Estadísticas' && <AnaliticaPanel rol="Empresa" />}
 
         {tab === 'Certificados recibidos' && (
           <div className="card">

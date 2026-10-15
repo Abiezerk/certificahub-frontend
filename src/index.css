@@ -909,3 +909,363 @@ footer.site-footer {
     display: none;
   }
 }
+
+/* ============================================================
+   ESTADÍSTICAS (AnaliticaPanel) — una sola serie en --seal;
+   texto siempre en tinta, nunca en el color de la serie.
+   ============================================================ */
+.an-panel {
+  --an-track: #e3f1ec;
+  --an-grid: #eceee9;
+}
+
+.an-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.an-periodos {
+  display: inline-flex;
+  flex-wrap: wrap;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 3px;
+  gap: 2px;
+}
+
+.an-periodos button {
+  border: none;
+  background: transparent;
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  padding: 6px 12px;
+  border-radius: 7px;
+  cursor: pointer;
+}
+
+.an-periodos button:hover {
+  color: var(--ink);
+}
+
+.an-periodos button.activo {
+  background: var(--seal);
+  color: #fff;
+  font-weight: 600;
+}
+
+.an-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.an-rango {
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+  margin: 0 0 12px;
+}
+
+.an-cargando {
+  opacity: 0.55;
+  transition: opacity 0.15s;
+}
+
+.an-tiles {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.an-tile {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.an-tile-label {
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+}
+
+.an-tile-value {
+  font-size: 1.55rem;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--ink);
+}
+
+.an-tile-nota {
+  font-size: 0.75rem;
+  color: var(--ink-soft);
+}
+
+.an-card + .an-card,
+.an-grid-2 {
+  margin-top: 16px;
+}
+
+.an-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.an-grid-2 > .card + .card {
+  margin-top: 0;
+}
+
+.an-grid-2 + .an-card {
+  margin-top: 16px;
+}
+
+.an-grid-2-sin-margen {
+  margin-top: 4px;
+  gap: 28px;
+}
+
+.an-titulo {
+  font-size: 1rem;
+  margin: 0;
+}
+
+.an-subtitulo {
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+  margin: 2px 0 16px;
+}
+
+.an-vacio,
+.an-chart-vacio {
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+}
+
+/* --- Columnas por mes --- */
+.an-chart-plot {
+  display: flex;
+  gap: 8px;
+  height: 200px;
+}
+
+.an-chart-ejey {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  min-width: 44px;
+  transform: translateY(-0.5em);
+  height: calc(100% + 1em);
+}
+
+.an-chart-area {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+  border-bottom: 1px solid #c9cec6;
+}
+
+.an-chart-grid {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--an-grid);
+  pointer-events: none;
+}
+
+.an-chart-vacio {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.an-col {
+  position: relative;
+  flex: 1;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  cursor: default;
+  outline: none;
+}
+
+.an-col.activa {
+  background: rgba(15, 122, 92, 0.05);
+}
+
+.an-col-barra {
+  width: min(24px, 60%);
+  min-height: 2px;
+  background: var(--seal);
+  border-radius: 4px 4px 0 0;
+}
+
+.an-col.activa .an-col-barra {
+  background: var(--seal-dark);
+}
+
+.an-tooltip {
+  position: absolute;
+  bottom: calc(100% - 8px);
+  left: 50%;
+  z-index: 5;
+  min-width: 150px;
+  background: var(--ink);
+  color: #fff;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  padding: 8px 10px;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  pointer-events: none;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+}
+
+.an-tooltip.izq {
+  left: auto;
+  right: 50%;
+}
+
+.an-tooltip strong {
+  text-transform: capitalize;
+}
+
+.an-chart-ejex {
+  display: flex;
+  margin-left: 52px;
+  margin-top: 6px;
+}
+
+.an-chart-ejex span {
+  flex: 1;
+  text-align: center;
+  font-size: 0.72rem;
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+
+.an-tabla-datos {
+  margin-top: 14px;
+  font-size: 0.82rem;
+}
+
+.an-tabla-datos summary {
+  cursor: pointer;
+  color: var(--ink-soft);
+}
+
+.an-tabla-datos table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 8px;
+}
+
+.an-tabla-datos th,
+.an-tabla-datos td {
+  text-align: left;
+  padding: 5px 8px;
+  border-bottom: 1px solid var(--an-grid);
+}
+
+.an-tabla-datos td:first-child {
+  text-transform: capitalize;
+}
+
+.an-tabla-datos .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- Barras horizontales --- */
+.an-barras {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.an-barra-fila {
+  display: grid;
+  grid-template-columns: minmax(90px, 38%) 1fr auto;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.85rem;
+}
+
+.an-barra-nombre {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.an-barra-track {
+  height: 10px;
+  background: var(--an-track);
+  border-radius: 0 4px 4px 0;
+  overflow: hidden;
+}
+
+.an-barra-relleno {
+  height: 100%;
+  min-width: 2px;
+  background: var(--seal);
+  border-radius: 0 4px 4px 0;
+}
+
+.an-barra-fila:hover .an-barra-relleno {
+  background: var(--seal-dark);
+}
+
+.an-barra-valor {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  text-align: right;
+  min-width: 48px;
+}
+
+.an-medidor {
+  margin-bottom: 12px;
+}
+
+.an-medidor-top {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  margin-bottom: 4px;
+}
+
+.an-medidor-valor {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 640px) {
+  .an-tiles {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .an-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .an-chart-plot {
+    height: 160px;
+  }
+}

@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import api, { apiErrorMessage } from '../api/client'
 import PrecioChips from '../components/PrecioChips'
+import AnaliticaPanel from '../components/AnaliticaPanel'
 
-const TABS = ['Mi perfil', 'Próximos cursos', 'Calendario', 'Especialidades y precios', 'Certificados']
+const TABS = ['Mi perfil', 'Próximos cursos', 'Calendario', 'Especialidades y precios', 'Certificados', 'Estadísticas']
 
 const DIAS_SEMANA = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
 
@@ -320,6 +321,13 @@ export default function InstructorDashboard() {
   }
 
   async function cambiarEstado(transaccionId, nuevoEstado) {
+    // Completar es definitivo (después ya no se puede cambiar el estado), así que se confirma
+    if (
+      nuevoEstado === 'Completada' &&
+      !window.confirm('¿Marcar este curso como completado? Esta acción es definitiva: después ya no podrás cambiar su estado.')
+    ) {
+      return
+    }
     try {
       await api.put(`/transacciones/${transaccionId}/estado`, { nuevoEstado })
       flash('success', `Curso actualizado a "${nuevoEstado}"`)
@@ -356,14 +364,17 @@ export default function InstructorDashboard() {
         <div className="row-actions">
           <span className={`status-pill status-${t.estado.toLowerCase()}`}>{t.estado}</span>
           {/* value fijo en "": el select es solo un menú de acciones; si no, se queda mostrando
-              la última acción elegida (ej. "Marcar completada") aunque ya se aplicó */}
-          <select value="" onChange={(e) => e.target.value && cambiarEstado(t.id, e.target.value)}>
-            <option value="">Cambiar estado…</option>
-            <option value="Confirmada">Confirmar</option>
-            <option value="EnCurso">Marcar en curso</option>
-            <option value="Completada">Marcar completada</option>
-            <option value="Cancelada">Cancelar</option>
-          </select>
+              la última acción elegida (ej. "Marcar completada") aunque ya se aplicó.
+              Un curso completado es definitivo: ya no se le puede cambiar el estado. */}
+          {t.estado !== 'Completada' && (
+            <select value="" onChange={(e) => e.target.value && cambiarEstado(t.id, e.target.value)}>
+              <option value="">Cambiar estado…</option>
+              <option value="Confirmada">Confirmar</option>
+              <option value="EnCurso">Marcar en curso</option>
+              <option value="Completada">Marcar completada</option>
+              <option value="Cancelada">Cancelar</option>
+            </select>
+          )}
           {/* Un curso completado ya se impartió: no tiene sentido volver a imprimir sus exámenes */}
           {t.estado === 'Completada' ? (
             <span style={{ fontSize: '0.82rem', color: 'var(--ink-soft)' }}>✓ Curso finalizado</span>
@@ -1387,6 +1398,8 @@ export default function InstructorDashboard() {
             </div>
           </>
         )}
+
+        {tab === 'Estadísticas' && <AnaliticaPanel rol="Instructor" />}
 
         {tab === 'Certificados' && (
           <>
