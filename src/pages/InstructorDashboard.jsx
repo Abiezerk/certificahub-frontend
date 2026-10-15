@@ -73,7 +73,13 @@ export default function InstructorDashboard() {
   const [rangosGrupo, setRangosGrupo] = useState([])
   const [guardando, setGuardando] = useState(false)
 
-  const [qrTokens, setQrTokens] = useState({})
+  const [examenes, setExamenes] = useState([])
+  const [subiendoExamen, setSubiendoExamen] = useState({})
+  const [eliminandoExamen, setEliminandoExamen] = useState({})
+  const [imprimiendoExamenes, setImprimiendoExamenes] = useState({})
+  // Exámenes ya generados, por transacción: { url, nombreArchivo }. Se generan primero y se
+  // descargan con un segundo clic, para que el navegador no bloquee la descarga como "automática".
+  const [examenesGenerados, setExamenesGenerados] = useState({})
   const [certLoteForm, setCertLoteForm] = useState({ transaccionId: '', archivo: null })
   const [generandoLote, setGenerandoLote] = useState(false)
   const [certsSeleccionados, setCertsSeleccionados] = useState({})
@@ -87,16 +93,18 @@ export default function InstructorDashboard() {
 
   async function cargarTodo() {
     try {
-      const [t, e, mp, c] = await Promise.all([
+      const [t, e, mp, c, ex] = await Promise.all([
         api.get('/transacciones/instructor/proximas'),
         api.get('/especialidades'),
         api.get('/instructores/mis-especialidades-precios'),
-        api.get('/certificados/instructor')
+        api.get('/certificados/instructor'),
+        api.get('/examenes/plantillas')
       ])
       setTransacciones(t.data)
       setEspecialidades(e.data)
       setMisEspecialidades(mp.data)
       setCertificados(c.data)
+      setExamenes(ex.data)
     } catch (err) {
       setMsg({ type: 'error', text: apiErrorMessage(err) })
     }
@@ -319,12 +327,67 @@ export default function InstructorDashboard() {
     }
   }
 
-  async function generarQr(transaccionId) {
+  function examenDeEspecialidad(especialidadId) {
+    return examenes.find((e) => e.especialidadId === especialidadId)
+  }
+
+  async function subirExamen(especialidadId, especialidadNombre, archivo) {
+    if (!archivo) return
+    if (!archivo.name.toLowerCase().endsWith('.docx')) {
+      flash('error', 'El examen debe ser un archivo .docx')
+      return
+    }
+    setSubiendoExamen((prev) => ({ ...prev, [especialidadId]: true }))
     try {
-      const { data } = await api.post(`/examenes/generar-qr/${transaccionId}`)
-      setQrTokens((prev) => ({ ...prev, [transaccionId]: data }))
+      const formData = new FormData()
+      formData.append('especialidadId', especialidadId)
+      formData.append('nombreTemplate', `Examen - ${especialidadNombre}`)
+      formData.append('archivo', archivo)
+      await api.post('/examenes/plantilla', formData)
+      flash('success', 'Examen subido correctamente')
+      cargarTodo()
+    } catch (err) {
+      flash('error', apiErrorMessage(err, 'No se pudo subir el examen'))
+    } finally {
+      setSubiendoExamen((prev) => ({ ...prev, [especialidadId]: false }))
+    }
+  }
+
+  async function eliminarExamen(examenId, especialidadNombre) {
+    const confirmado = window.confirm(`¿Eliminar el examen de "${especialidadNombre}"? Tendrás que subir uno nuevo antes de poder imprimir exámenes de esta especialidad.`)
+    if (!confirmado) return
+
+    setEliminandoExamen((prev) => ({ ...prev, [examenId]: true }))
+    try {
+      await api.delete(`/examenes/plantilla/${examenId}`)
+      flash('success', 'Examen eliminado')
+      cargarTodo()
     } catch (err) {
       flash('error', apiErrorMessage(err))
+    } finally {
+      setEliminandoExamen((prev) => ({ ...prev, [examenId]: false }))
+    }
+  }
+
+  async function imprimirExamenes(transaccionId, especialidadNombre) {
+    setImprimiendoExamenes((prev) => ({ ...prev, [transaccionId]: true }))
+    try {
+      const response = await api.get(`/examenes/imprimir/${transaccionId}`, { responseType: 'blob' })
+      const url = window.URL.createObjectURL(new Blob([response.data]))
+      // Nombre único (fecha y hora de generación): si el instructor tiene abierto en Word un
+      // examen descargado antes, un nombre repetido hace que Windows bloquee la descarga nueva.
+      const ahora = new Date()
+      const pad = (n) => String(n).padStart(2, '0')
+      const sello = `${ahora.getFullYear()}${pad(ahora.getMonth() + 1)}${pad(ahora.getDate())}_${pad(ahora.getHours())}${pad(ahora.getMinutes())}${pad(ahora.getSeconds())}`
+      setExamenesGenerados((prev) => {
+        if (prev[transaccionId]) window.URL.revokeObjectURL(prev[transaccionId].url)
+        return { ...prev, [transaccionId]: { url, nombreArchivo: `Examenes_${especialidadNombre}_${sello}.docx` } }
+      })
+      flash('success', 'Exámenes generados — da clic en "Descargar exámenes"')
+    } catch (err) {
+      flash('error', apiErrorMessage(err, 'No se pudieron generar los exámenes'))
+    } finally {
+      setImprimiendoExamenes((prev) => ({ ...prev, [transaccionId]: false }))
     }
   }
 
@@ -338,7 +401,9 @@ export default function InstructorDashboard() {
       document.body.appendChild(link)
       link.click()
       link.remove()
-      window.URL.revokeObjectURL(url)
+      // Se libera con retraso: si el navegador pausa la descarga para pedir permiso
+      // (Brave/Chrome con descargas múltiples), el archivo debe seguir disponible.
+      setTimeout(() => window.URL.revokeObjectURL(url), 60000)
     } catch (err) {
       flash('error', apiErrorMessage(err, 'No se pudo descargar la plantilla'))
     }
@@ -438,7 +503,9 @@ export default function InstructorDashboard() {
       document.body.appendChild(link)
       link.click()
       link.remove()
-      window.URL.revokeObjectURL(url)
+      // Se libera con retraso: si el navegador pausa la descarga para pedir permiso
+      // (Brave/Chrome con descargas múltiples), el archivo debe seguir disponible.
+      setTimeout(() => window.URL.revokeObjectURL(url), 60000)
       flash('success', 'ZIP descargado correctamente')
     } catch (err) {
       flash('error', apiErrorMessage(err, 'No se pudo descargar el ZIP'))
@@ -560,10 +627,19 @@ export default function InstructorDashboard() {
   function renderAcordeonCurso(curso, datoCurso) {
     return (
       <div key={curso} style={{ marginBottom: 16, border: '1px solid #e0e0e0', borderRadius: 6, overflow: 'hidden' }}>
-        {/* ACORDEÓN HEADER */}
-        <button
-          type="button"
+        {/* ACORDEÓN HEADER — div con role="button" en vez de <button> real porque
+            contiene botones propios (Enviar a empresa, ZIP), y un <button> no puede
+            anidar otro <button> (HTML inválido, generaba un warning de React) */}
+        <div
+          role="button"
+          tabIndex={0}
           onClick={() => toggleAcordeon(curso)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault()
+              toggleAcordeon(curso)
+            }
+          }}
           style={{
             display: 'flex',
             justifyContent: 'space-between',
@@ -637,7 +713,7 @@ export default function InstructorDashboard() {
               ▾
             </span>
           </div>
-        </button>
+        </div>
 
         {/* ACORDEÓN CONTENIDO */}
         {acordeonesAbiertos[curso] && (
@@ -831,26 +907,48 @@ export default function InstructorDashboard() {
                           "{t.descripcion}"
                         </span>
                       )}
-                      {qrTokens[t.id] && (
-                        <div className="token-box">
-                          Token QR: {qrTokens[t.id].token}
-                          <br />
-                          Válido: {new Date(qrTokens[t.id].fechaValidez).toLocaleDateString('es-MX')}
-                        </div>
-                      )}
                     </div>
                     <div className="row-actions">
                       <span className={`status-pill status-${t.estado.toLowerCase()}`}>{t.estado}</span>
-                      <select defaultValue="" onChange={(e) => e.target.value && cambiarEstado(t.id, e.target.value)}>
+                      {/* value fijo en "": el select es solo un menú de acciones; si no, se queda mostrando
+                          la última acción elegida (ej. "Marcar completada") aunque ya se aplicó */}
+                      <select value="" onChange={(e) => e.target.value && cambiarEstado(t.id, e.target.value)}>
                         <option value="">Cambiar estado…</option>
                         <option value="Confirmada">Confirmar</option>
                         <option value="EnCurso">Marcar en curso</option>
                         <option value="Completada">Marcar completada</option>
                         <option value="Cancelada">Cancelar</option>
                       </select>
-                      <button className="btn btn-outline btn-sm" onClick={() => generarQr(t.id)}>
-                        Generar QR
+                      {/* Un curso completado ya se impartió: no tiene sentido volver a imprimir sus exámenes */}
+                      {t.estado === 'Completada' ? (
+                        <span style={{ fontSize: '0.82rem', color: 'var(--ink-soft)' }}>✓ Curso finalizado</span>
+                      ) : (
+                      <>
+                      <button
+                        className="btn btn-outline btn-sm"
+                        onClick={() => imprimirExamenes(t.id, t.especialidadNombre)}
+                        disabled={imprimiendoExamenes[t.id] || !examenDeEspecialidad(t.especialidadId)}
+                        title={
+                          !examenDeEspecialidad(t.especialidadId)
+                            ? `Sube el examen de "${t.especialidadNombre}" en Especialidades y precios primero`
+                            : `Genera un .docx con ${t.numeroParticipantes} copias, cada una con el QR de evaluación`
+                        }
+                      >
+                        {imprimiendoExamenes[t.id]
+                          ? 'Generando…'
+                          : examenesGenerados[t.id] ? '🔄 Volver a generar' : '🖨️ Imprimir exámenes'}
                       </button>
+                      {examenesGenerados[t.id] && !imprimiendoExamenes[t.id] && (
+                        <a
+                          className="btn btn-primary btn-sm"
+                          href={examenesGenerados[t.id].url}
+                          download={examenesGenerados[t.id].nombreArchivo}
+                        >
+                          ⬇️ Descargar exámenes
+                        </a>
+                      )}
+                      </>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -981,6 +1079,12 @@ export default function InstructorDashboard() {
           <>
             <div className="card">
               <h3 className="section-title">Tus especialidades</h3>
+              <p style={{ fontSize: '0.8rem', color: 'var(--ink-soft)', marginTop: -8, marginBottom: 16 }}>
+                Sube el examen de evaluación de cada especialidad (un .docx con tus preguntas, al gusto). Debe incluir
+                el texto <strong>{'{{QR}}'}</strong> en el lugar donde quieres que aparezca el código QR — al imprimir
+                exámenes desde "Próximos cursos" se genera una copia por participante, cada una con el mismo QR, válido
+                solo el día del curso y solo el número de veces igual al número de participantes.
+              </p>
               {misEspecialidades.length === 0 ? (
                 <div className="empty-state">Aún no has agregado ninguna especialidad.</div>
               ) : (
@@ -1000,11 +1104,49 @@ export default function InstructorDashboard() {
                         <div style={{ marginTop: 4 }}>
                           <PrecioChips p={p} />
                         </div>
+                        <div style={{ marginTop: 6, fontSize: '0.8rem', color: 'var(--ink-soft)' }}>
+                          {examenDeEspecialidad(p.especialidadId) ? (
+                            <>📝 Examen: {examenDeEspecialidad(p.especialidadId).nombreTemplate}</>
+                          ) : (
+                            <>📝 Sin examen subido — no podrás imprimir exámenes de esta especialidad</>
+                          )}
+                        </div>
                       </div>
-                      <div style={{ display: 'flex', gap: 8 }}>
+                      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                         <button className="btn btn-outline btn-sm" onClick={() => abrirEdicion(p)}>
                           Editar precio
                         </button>
+                        <label
+                          className="btn btn-outline btn-sm"
+                          style={{ cursor: subiendoExamen[p.especialidadId] ? 'default' : 'pointer' }}
+                        >
+                          {subiendoExamen[p.especialidadId]
+                            ? 'Subiendo…'
+                            : examenDeEspecialidad(p.especialidadId)
+                              ? 'Cambiar examen'
+                              : 'Subir examen (.docx)'}
+                          <input
+                            type="file"
+                            accept=".docx"
+                            style={{ display: 'none' }}
+                            disabled={subiendoExamen[p.especialidadId]}
+                            onChange={(e) => {
+                              const archivo = e.target.files?.[0]
+                              e.target.value = ''
+                              subirExamen(p.especialidadId, p.especialidadNombre, archivo)
+                            }}
+                          />
+                        </label>
+                        {examenDeEspecialidad(p.especialidadId) && (
+                          <button
+                            className="btn btn-outline btn-sm"
+                            style={{ color: '#c0392b', borderColor: '#c0392b' }}
+                            disabled={eliminandoExamen[examenDeEspecialidad(p.especialidadId).id]}
+                            onClick={() => eliminarExamen(examenDeEspecialidad(p.especialidadId).id, p.especialidadNombre)}
+                          >
+                            {eliminandoExamen[examenDeEspecialidad(p.especialidadId).id] ? 'Eliminando…' : 'Eliminar examen'}
+                          </button>
+                        )}
                         <button
                           className="btn btn-outline btn-sm"
                           style={{ color: '#c0392b', borderColor: '#c0392b' }}

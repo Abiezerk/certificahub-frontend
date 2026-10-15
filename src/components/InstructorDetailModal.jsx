@@ -65,6 +65,8 @@ export default function InstructorDetailModal({ instructor, onClose }) {
   })
   const [horaForm, setHoraForm] = useState({ hora: '', minuto: '', ampm: 'AM' })
   const [contratarMsg, setContratarMsg] = useState({ type: '', text: '' })
+  // Resumen de la contratación recién hecha; mientras exista, el modal solo muestra la confirmación.
+  const [contratacionHecha, setContratacionHecha] = useState(null)
   const [enviando, setEnviando] = useState(false)
 
   useEffect(() => {
@@ -117,14 +119,41 @@ export default function InstructorDetailModal({ instructor, onClose }) {
         especialidadId: Number(contratarForm.especialidadId),
         fechaCurso: fechaHoraISO,
         numeroParticipantes: Number(contratarForm.numeroParticipantes),
-        descripcion: contratarForm.descripcion
+        descripcion: contratarForm.descripcion,
+        // Zona horaria de la empresa (ej. "America/Mexico_City"): la hora capturada es la de su
+        // ciudad, y el backend la usa para la regla de cancelación de 24 h y la vigencia del QR.
+        zonaHoraria: Intl.DateTimeFormat().resolvedOptions().timeZone
       })
-      setContratarMsg({ type: 'success', text: 'Curso contratado. Revisa "Mi panel" para darle seguimiento.' })
+      const fecha = new Date(fechaHoraISO)
+      setContratacionHecha({
+        especialidad: conPrecio.find((p) => p.especialidadId === Number(contratarForm.especialidadId))?.especialidadNombre,
+        fecha: fecha.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }),
+        hora: fecha.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', hour12: true })
+      })
     } catch (err) {
       setContratarMsg({ type: 'error', text: apiErrorMessage(err, 'No se pudo crear la contratación') })
     } finally {
       setEnviando(false)
     }
+  }
+
+  if (contratacionHecha) {
+    return (
+      <div className="modal-backdrop" onClick={onClose}>
+        <div className="modal modal-confirmacion" onClick={(e) => e.stopPropagation()}>
+          <button className="modal-cerrar-x" onClick={onClose} aria-label="Cerrar">
+            ×
+          </button>
+          <div className="modal-confirmacion-icono">✓</div>
+          <h3>¡Contratación realizada!</h3>
+          <p>
+            {contratacionHecha.especialidad && <>Tu curso de <strong>{contratacionHecha.especialidad}</strong> con {instructor.nombreCompleto} </>}
+            quedó registrado para el <strong>{contratacionHecha.fecha}</strong> a las <strong>{contratacionHecha.hora}</strong>.
+          </p>
+          <p className="modal-confirmacion-nota">Puedes darle seguimiento en "Mi panel".</p>
+        </div>
+      </div>
+    )
   }
 
   return (

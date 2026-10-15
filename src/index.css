@@ -795,6 +795,61 @@ button, input, select, textarea {
   overflow-x: hidden;
 }
 
+/* Ventana de confirmación (ej. "Contratación realizada"): solo mensaje y la X para cerrar */
+.modal-confirmacion {
+  position: relative;
+  max-width: 420px;
+  text-align: center;
+  padding: 36px 28px 28px;
+}
+
+.modal-confirmacion h3 {
+  margin-bottom: 10px;
+}
+
+.modal-confirmacion p {
+  font-size: 0.92rem;
+  color: var(--ink-soft);
+  line-height: 1.5;
+}
+
+.modal-confirmacion-icono {
+  width: 52px;
+  height: 52px;
+  margin: 0 auto 14px;
+  border-radius: 50%;
+  background: var(--seal);
+  color: #fff;
+  font-size: 1.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-confirmacion-nota {
+  margin-top: 12px;
+  font-size: 0.82rem !important;
+}
+
+.modal-cerrar-x {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: 50%;
+}
+
+.modal-cerrar-x:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
 .modal-head {
   display: flex;
   justify-content: space-between;
