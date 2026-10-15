@@ -50,6 +50,8 @@ export default function InstructorDashboard() {
   const [descargandoZip, setDescargandoZip] = useState({})
   const [enviandoLote, setEnviandoLote] = useState({})
   const [mostrarEliminados, setMostrarEliminados] = useState(false)
+  // "Próximos cursos": los completados se agrupan aparte, en una sección plegable
+  const [mostrarCompletados, setMostrarCompletados] = useState(false)
 
   // --- Mi perfil ---
   const [perfil, setPerfil] = useState(null)
@@ -325,6 +327,76 @@ export default function InstructorDashboard() {
     } catch (err) {
       flash('error', apiErrorMessage(err))
     }
+  }
+
+  const cursosVigentes = transacciones.filter((t) => t.estado !== 'Completada')
+  // Los completados, del más reciente al más antiguo
+  const cursosCompletados = transacciones
+    .filter((t) => t.estado === 'Completada')
+    .sort((a, b) => new Date(b.fechaCurso) - new Date(a.fechaCurso))
+
+  // Fila de un curso en "Próximos cursos" (se usa tanto para los vigentes como para los completados)
+  function renderFilaCurso(t) {
+    return (
+      <div className="row-item" key={t.id}>
+        <div className="row-main">
+          <span className="row-title">{t.empresaNombre} · {t.especialidadNombre}</span>
+          <span className="row-sub">
+            {new Date(t.fechaCurso).toLocaleDateString('es-MX')} ·{' '}
+            {new Date(t.fechaCurso).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })} ·{' '}
+            {t.numeroParticipantes} participantes · $
+            {t.precioTotal.toLocaleString('es-MX')}
+          </span>
+          {t.descripcion && (
+            <span className="row-sub" style={{ display: 'block', marginTop: 2, fontStyle: 'italic' }}>
+              "{t.descripcion}"
+            </span>
+          )}
+        </div>
+        <div className="row-actions">
+          <span className={`status-pill status-${t.estado.toLowerCase()}`}>{t.estado}</span>
+          {/* value fijo en "": el select es solo un menú de acciones; si no, se queda mostrando
+              la última acción elegida (ej. "Marcar completada") aunque ya se aplicó */}
+          <select value="" onChange={(e) => e.target.value && cambiarEstado(t.id, e.target.value)}>
+            <option value="">Cambiar estado…</option>
+            <option value="Confirmada">Confirmar</option>
+            <option value="EnCurso">Marcar en curso</option>
+            <option value="Completada">Marcar completada</option>
+            <option value="Cancelada">Cancelar</option>
+          </select>
+          {/* Un curso completado ya se impartió: no tiene sentido volver a imprimir sus exámenes */}
+          {t.estado === 'Completada' ? (
+            <span style={{ fontSize: '0.82rem', color: 'var(--ink-soft)' }}>✓ Curso finalizado</span>
+          ) : (
+          <>
+          <button
+            className="btn btn-outline btn-sm"
+            onClick={() => imprimirExamenes(t.id, t.especialidadNombre)}
+            disabled={imprimiendoExamenes[t.id] || !examenDeEspecialidad(t.especialidadId)}
+            title={
+              !examenDeEspecialidad(t.especialidadId)
+                ? `Sube el examen de "${t.especialidadNombre}" en Especialidades y precios primero`
+                : `Genera un .docx con ${t.numeroParticipantes} copias, cada una con el QR de evaluación`
+            }
+          >
+            {imprimiendoExamenes[t.id]
+              ? 'Generando…'
+              : examenesGenerados[t.id] ? '🔄 Volver a generar' : '🖨️ Imprimir exámenes'}
+          </button>
+          {examenesGenerados[t.id] && !imprimiendoExamenes[t.id] && (
+            <a
+              className="btn btn-primary btn-sm"
+              href={examenesGenerados[t.id].url}
+              download={examenesGenerados[t.id].nombreArchivo}
+            >
+              ⬇️ Descargar exámenes
+            </a>
+          )}
+          </>
+          )}
+        </div>
+      </div>
+    )
   }
 
   function examenDeEspecialidad(especialidadId) {
@@ -892,66 +964,27 @@ export default function InstructorDashboard() {
               </div>
             ) : (
               <div className="row-list">
-                {transacciones.map((t) => (
-                  <div className="row-item" key={t.id}>
-                    <div className="row-main">
-                      <span className="row-title">{t.empresaNombre} · {t.especialidadNombre}</span>
-                      <span className="row-sub">
-                        {new Date(t.fechaCurso).toLocaleDateString('es-MX')} ·{' '}
-                        {new Date(t.fechaCurso).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })} ·{' '}
-                        {t.numeroParticipantes} participantes · $
-                        {t.precioTotal.toLocaleString('es-MX')}
-                      </span>
-                      {t.descripcion && (
-                        <span className="row-sub" style={{ display: 'block', marginTop: 2, fontStyle: 'italic' }}>
-                          "{t.descripcion}"
-                        </span>
-                      )}
-                    </div>
-                    <div className="row-actions">
-                      <span className={`status-pill status-${t.estado.toLowerCase()}`}>{t.estado}</span>
-                      {/* value fijo en "": el select es solo un menú de acciones; si no, se queda mostrando
-                          la última acción elegida (ej. "Marcar completada") aunque ya se aplicó */}
-                      <select value="" onChange={(e) => e.target.value && cambiarEstado(t.id, e.target.value)}>
-                        <option value="">Cambiar estado…</option>
-                        <option value="Confirmada">Confirmar</option>
-                        <option value="EnCurso">Marcar en curso</option>
-                        <option value="Completada">Marcar completada</option>
-                        <option value="Cancelada">Cancelar</option>
-                      </select>
-                      {/* Un curso completado ya se impartió: no tiene sentido volver a imprimir sus exámenes */}
-                      {t.estado === 'Completada' ? (
-                        <span style={{ fontSize: '0.82rem', color: 'var(--ink-soft)' }}>✓ Curso finalizado</span>
-                      ) : (
-                      <>
-                      <button
-                        className="btn btn-outline btn-sm"
-                        onClick={() => imprimirExamenes(t.id, t.especialidadNombre)}
-                        disabled={imprimiendoExamenes[t.id] || !examenDeEspecialidad(t.especialidadId)}
-                        title={
-                          !examenDeEspecialidad(t.especialidadId)
-                            ? `Sube el examen de "${t.especialidadNombre}" en Especialidades y precios primero`
-                            : `Genera un .docx con ${t.numeroParticipantes} copias, cada una con el QR de evaluación`
-                        }
-                      >
-                        {imprimiendoExamenes[t.id]
-                          ? 'Generando…'
-                          : examenesGenerados[t.id] ? '🔄 Volver a generar' : '🖨️ Imprimir exámenes'}
-                      </button>
-                      {examenesGenerados[t.id] && !imprimiendoExamenes[t.id] && (
-                        <a
-                          className="btn btn-primary btn-sm"
-                          href={examenesGenerados[t.id].url}
-                          download={examenesGenerados[t.id].nombreArchivo}
-                        >
-                          ⬇️ Descargar exámenes
-                        </a>
-                      )}
-                      </>
-                      )}
-                    </div>
+                {cursosVigentes.length === 0 && (
+                  <div className="empty-state">No tienes cursos pendientes. Los cursos ya impartidos están abajo.</div>
+                )}
+                {cursosVigentes.map((t) => renderFilaCurso(t))}
+              </div>
+            )}
+
+            {cursosCompletados.length > 0 && (
+              <div style={{ marginTop: 16 }}>
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm"
+                  onClick={() => setMostrarCompletados((v) => !v)}
+                >
+                  {mostrarCompletados ? '▾ Ocultar' : '▸ Ver'} cursos completados ({cursosCompletados.length})
+                </button>
+                {mostrarCompletados && (
+                  <div className="row-list" style={{ marginTop: 12 }}>
+                    {cursosCompletados.map((t) => renderFilaCurso(t))}
                   </div>
-                ))}
+                )}
               </div>
             )}
           </div>
