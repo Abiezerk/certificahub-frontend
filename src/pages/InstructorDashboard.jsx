@@ -321,11 +321,12 @@ export default function InstructorDashboard() {
   }
 
   async function cambiarEstado(transaccionId, nuevoEstado) {
-    // Completar es definitivo (después ya no se puede cambiar el estado), así que se confirma
-    if (
-      nuevoEstado === 'Completada' &&
-      !window.confirm('¿Marcar este curso como completado? Esta acción es definitiva: después ya no podrás cambiar su estado.')
-    ) {
+    // Completar y cancelar son definitivos (después ya no se puede cambiar el estado), así que se confirman
+    const confirmaciones = {
+      Completada: '¿Marcar este curso como completado? Esta acción es definitiva: después ya no podrás cambiar su estado.',
+      Cancelada: '¿Cancelar este curso? Esta acción es definitiva: después ya no podrás reactivarlo.'
+    }
+    if (confirmaciones[nuevoEstado] && !window.confirm(confirmaciones[nuevoEstado])) {
       return
     }
     try {

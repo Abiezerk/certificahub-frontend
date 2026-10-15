@@ -32,6 +32,13 @@ export default function EmpresaDashboard() {
   }, [])
 
   async function cambiarEstado(id, nuevoEstado) {
+    // Cancelar es definitivo: después ya no se puede reactivar el curso
+    if (
+      nuevoEstado === 'Cancelada' &&
+      !window.confirm('¿Cancelar este curso? Esta acción es definitiva: después ya no se puede reactivar.')
+    ) {
+      return
+    }
     try {
       await api.put(`/transacciones/${id}/estado`, { nuevoEstado })
       cargarTodo()
