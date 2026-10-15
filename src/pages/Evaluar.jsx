@@ -58,6 +58,7 @@ export default function Evaluar() {
 
   return (
     <div className="page">
+      <div className="container">
       <div className="evaluar-shell">
         {validando ? (
           <p style={{ color: 'var(--ink-soft)' }}>Validando código…</p>
@@ -135,6 +136,7 @@ export default function Evaluar() {
             </form>
           </div>
         )}
+      </div>
       </div>
     </div>
   )

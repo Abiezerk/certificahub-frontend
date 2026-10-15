@@ -9,6 +9,7 @@ import Register from './pages/Register'
 import InstructorDashboard from './pages/InstructorDashboard'
 import EmpresaDashboard from './pages/EmpresaDashboard'
 import Evaluar from './pages/Evaluar'
+import Verificar from './pages/Verificar'
 
 function Panel() {
   const { user } = useAuth()
@@ -26,6 +27,8 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/registro" element={<Register />} />
         <Route path="/evaluar/:token" element={<Evaluar />} />
+        <Route path="/verificar" element={<Verificar />} />
+        <Route path="/verificar/:numeroSerie" element={<Verificar />} />
         <Route
           path="/panel"
           element={

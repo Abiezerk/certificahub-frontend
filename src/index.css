@@ -1269,3 +1269,199 @@ footer.site-footer {
     height: 160px;
   }
 }
+
+/* ============================================================
+   VERIFICACIÓN PÚBLICA DE CONSTANCIAS DC-3
+   ============================================================ */
+.verificar-shell {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.verificar-header {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+
+.verificar-header h1 {
+  font-size: 1.6rem;
+  margin: 0 0 4px;
+}
+
+.verificar-header p {
+  color: var(--ink-soft);
+  margin: 0;
+}
+
+.verificar-sello {
+  flex-shrink: 0;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 2px solid var(--seal);
+  color: var(--seal-dark);
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.verificar-busqueda {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 18px 20px;
+  margin-bottom: 16px;
+}
+
+.verificar-busqueda label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.verificar-busqueda-fila {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.verificar-busqueda-fila input {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.verificar-busqueda-fila input::placeholder {
+  text-transform: none;
+  color: #a2a89f;
+}
+
+.verificar-ayuda {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+  margin-top: 6px;
+}
+
+.verificar-estado {
+  color: var(--ink-soft);
+}
+
+.verificar-resultado {
+  border-width: 1px;
+  border-top-width: 4px;
+}
+
+.verificar-valido {
+  border-top-color: var(--seal);
+}
+
+.verificar-invalido {
+  border-top-color: var(--alert);
+}
+
+.verificar-veredicto {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.verificar-veredicto h2 {
+  font-size: 1.25rem;
+  margin: 0 0 4px;
+}
+
+.verificar-veredicto p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 0.92rem;
+}
+
+.verificar-icono {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 1.2rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.verificar-valido .verificar-icono {
+  background: var(--seal);
+}
+
+.verificar-invalido .verificar-icono {
+  background: var(--alert);
+}
+
+.verificar-datos {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px 24px;
+  margin: 22px 0 0;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+}
+
+.verificar-dato {
+  margin: 0;
+  min-width: 0;
+}
+
+.verificar-dato-ancho {
+  grid-column: 1 / -1;
+}
+
+.verificar-dato dt {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-soft);
+  margin-bottom: 2px;
+}
+
+.verificar-dato dd {
+  margin: 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.verificar-mono {
+  font-family: var(--font-mono);
+  font-weight: 500 !important;
+}
+
+.verificar-leyenda {
+  margin-top: 20px;
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+  line-height: 1.5;
+  border-top: 1px solid var(--line);
+  padding-top: 14px;
+}
+
+@media (max-width: 640px) {
+  .verificar-datos {
+    grid-template-columns: 1fr;
+  }
+  .verificar-header h1 {
+    font-size: 1.3rem;
+  }
+}
