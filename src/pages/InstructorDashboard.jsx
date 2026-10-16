@@ -3,6 +3,7 @@ import api, { apiErrorMessage } from '../api/client'
 import PrecioChips from '../components/PrecioChips'
 import VerificacionStps from '../components/VerificacionStps'
 import MisInstituciones from '../components/MisInstituciones'
+import EliminarCuenta from '../components/EliminarCuenta'
 import AnaliticaPanel from '../components/AnaliticaPanel'
 
 // Recorta la foto al centro en un cuadrado de 400 px y la convierte a JPEG (calidad 0.85).
@@ -1008,6 +1009,7 @@ export default function InstructorDashboard() {
         )}
 
         {tab === 'Mi perfil' && <MisInstituciones />}
+        {tab === 'Mi perfil' && <EliminarCuenta tipo="Instructor" />}
 
         {tab === 'Próximos cursos' && (
           <div className="card">

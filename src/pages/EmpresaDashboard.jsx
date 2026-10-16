@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import api, { apiErrorMessage } from '../api/client'
 import AnaliticaPanel from '../components/AnaliticaPanel'
+import EliminarCuenta from '../components/EliminarCuenta'
 
-const TABS = ['Mis cursos contratados', 'Certificados recibidos', 'Estadísticas']
+const TABS = ['Mis cursos contratados', 'Certificados recibidos', 'Estadísticas', 'Mi cuenta']
 
 export default function EmpresaDashboard() {
   const [tab, setTab] = useState(TABS[0])
@@ -258,6 +259,8 @@ export default function EmpresaDashboard() {
         )}
 
         {tab === 'Estadísticas' && <AnaliticaPanel rol="Empresa" />}
+
+        {tab === 'Mi cuenta' && <EliminarCuenta tipo="Empresa" />}
 
         {tab === 'Certificados recibidos' && (
           <div className="card">

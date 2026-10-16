@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import api, { apiErrorMessage } from '../api/client'
 import VerificacionStps from '../components/VerificacionStps'
 import StarRating from '../components/StarRating'
+import EliminarCuenta from '../components/EliminarCuenta'
 
 const ESTADOS_MEXICO = [
   'Aguascalientes', 'Baja California', 'Baja California Sur', 'Campeche', 'Chiapas',
@@ -211,6 +212,8 @@ export default function InstitucionDashboard() {
             </form>
           </div>
         )}
+
+        {tab === 'Perfil de la institución' && <EliminarCuenta tipo="Institucion" />}
       </div>
     </div>
   )

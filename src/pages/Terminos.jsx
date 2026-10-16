@@ -1,18 +1,19 @@
 import { Link } from 'react-router-dom'
 import usePageMeta from '../hooks/usePageMeta'
+import DatoNegocio from '../components/DatoNegocio'
+import { PRECIOS, RESPONSABLE, dinero } from '../config/negocio'
 
 // BORRADOR — debe revisarlo un abogado antes de publicarse en producción.
-export const VERSION_TERMINOS = '2026-10-15'
-
-function Pendiente({ children }) {
-  return <mark className="legal-pendiente">[POR COMPLETAR: {children}]</mark>
-}
+// Datos del responsable y precios: src/config/negocio.js
+export const VERSION_TERMINOS = '2026-10-15.2'
 
 export default function Terminos() {
   usePageMeta({
     titulo: 'Términos y condiciones',
-    descripcion: 'Condiciones de uso de CertificaHub para instructores y empresas.'
+    descripcion: 'Condiciones de uso de CertificaHub para instructores, instituciones y empresas.'
   })
+
+  const iva = PRECIOS.ivaIncluido ? 'IVA incluido' : 'más IVA'
 
   return (
     <div className="page">
@@ -23,10 +24,11 @@ export default function Terminos() {
 
           <h2>1. Quiénes somos y qué hace la plataforma</h2>
           <p>
-            CertificaHub es una plataforma operada por <Pendiente>nombre o razón social</Pendiente>, con domicilio en{' '}
-            <Pendiente>domicilio completo</Pendiente>, que conecta a empresas con instructores de capacitación, y ofrece
-            herramientas para programar cursos, generar constancias de competencias DC-3, aplicar evaluaciones de los
-            participantes y verificar la autenticidad de las constancias.
+            CertificaHub es operada por <DatoNegocio valor={RESPONSABLE.nombre} />, con domicilio en{' '}
+            <DatoNegocio valor={RESPONSABLE.domicilio} />. Conecta a empresas con instructores de capacitación registrados
+            ante la Secretaría del Trabajo y Previsión Social (STPS) y ofrece herramientas para programar cursos, generar
+            constancias de competencias DC-3, aplicar evaluaciones de los participantes y verificar la autenticidad de las
+            constancias.
           </p>
           <p>
             CertificaHub actúa como intermediario tecnológico: no imparte los cursos ni es parte de la relación de
@@ -35,52 +37,106 @@ export default function Terminos() {
 
           <h2>2. Aceptación</h2>
           <p>
-            Al crear una cuenta aceptas estos términos y el <Link to="/privacidad">Aviso de privacidad</Link>. Si no estás
-            de acuerdo, no utilices la plataforma.
+            Al crear una cuenta aceptas estos términos y el <Link to="/privacidad">Aviso de privacidad</Link>. Si no estás de
+            acuerdo, no utilices la plataforma.
           </p>
 
-          <h2>3. Cuentas</h2>
-          <ul>
-            <li>Debes proporcionar información verdadera, completa y actualizada.</li>
-            <li>Eres responsable de mantener la confidencialidad de tu contraseña y de la actividad de tu cuenta.</li>
-            <li>Podemos suspender cuentas que incumplan estos términos o se usen de forma fraudulenta.</li>
-          </ul>
-
-          <h2>4. Instructores</h2>
+          <h2>3. Tipos de cuenta</h2>
           <ul>
             <li>
-              El instructor declara contar con las autorizaciones necesarias para impartir capacitación y emitir
-              constancias DC-3, incluyendo su registro como agente capacitador ante la Secretaría del Trabajo y Previsión
-              Social cuando la normativa lo requiera.
+              <strong>Instructor:</strong> persona física registrada ante la STPS como agente capacitador externo.
             </li>
             <li>
-              El instructor es el único responsable del contenido de sus cursos y de la veracidad de los datos que asienta
-              en las constancias DC-3 que emite a través de la plataforma.
+              <strong>Institución:</strong> persona moral registrada ante la STPS como agente capacitador, para la que
+              trabajan instructores. No se contrata directamente: agrupa a sus instructores.
             </li>
             <li>
-              El uso de la plataforma por parte de los instructores tiene un costo, conforme a las tarifas vigentes
-              publicadas en <Pendiente>dónde se publicarán las tarifas y la forma de pago</Pendiente>.
+              <strong>Empresa:</strong> contrata cursos para su personal. Su uso de la plataforma es gratuito.
             </li>
           </ul>
+          <p>
+            Debes proporcionar información verdadera y actualizada, y eres responsable de mantener la confidencialidad de tu
+            contraseña y de la actividad de tu cuenta.
+          </p>
 
-          <h2>5. Empresas</h2>
+          <h2>4. Verificación ante la STPS</h2>
           <ul>
-            <li>El uso de la plataforma es gratuito para las empresas.</li>
+            <li>
+              Los instructores y las instituciones deben verificar su registro de agente capacitador consultando con su RFC el
+              padrón público de la STPS. Mientras no lo verifiquen no aparecen en el ranking y los instructores no pueden ser
+              contratados.
+            </li>
+            <li>
+              Un instructor solo puede ofrecer, impartir y emitir constancias de los cursos que tenga registrados ante la
+              STPS. El nombre, la duración y el área temática de cada curso se toman del registro oficial.
+            </li>
+            <li>
+              Revisamos periódicamente el padrón de la STPS. Si un registro deja de estar activo, la cuenta se suspende hasta
+              que vuelva a estarlo; si un curso deja de aparecer, deja de ofrecerse.
+            </li>
+          </ul>
+
+          <h2>5. Planes y pagos para instructores</h2>
+          <ul>
+            {PRECIOS.planes.map((p) => (
+              <li key={p.id}>
+                <strong>Plan {p.nombre}:</strong> {dinero(p.precioMensual)} {PRECIOS.moneda} al mes ({iva}),{' '}
+                {p.limiteDc3Mensual ? `hasta ${p.limiteDc3Mensual} constancias DC-3 al mes` : 'constancias DC-3 ilimitadas'}.
+              </li>
+            ))}
+            <li>
+              El cobro es mensual y se renueva automáticamente con la tarjeta registrada. Los pagos se procesan a través de
+              Stripe; CertificaHub no ve ni guarda los datos de tu tarjeta.
+            </li>
+            <li>
+              El límite de constancias se cuenta por mes calendario. Al alcanzarlo, puedes cambiar al plan con mayor límite
+              para seguir generando constancias ese mes.
+            </li>
+            <li>
+              Puedes cancelar tu plan en cualquier momento; seguirá activo hasta el final del periodo ya pagado y no se
+              realizan reembolsos por periodos parciales.
+            </li>
+            <li>
+              Los precios vigentes se publican en la <Link to="/precios">página de precios</Link>. Si cambian, te avisaremos
+              con al menos 30 días de anticipación antes de aplicarlos a tu siguiente cobro.
+            </li>
+            <li>Si lo solicitas, emitimos la factura (CFDI) correspondiente a tus pagos.</li>
+          </ul>
+
+          <h2>6. Instructores</h2>
+          <ul>
+            <li>
+              El instructor es el único responsable del contenido de sus cursos y de la veracidad de los datos que asienta en
+              las constancias DC-3 que emite a través de la plataforma.
+            </li>
+            <li>
+              Solo puede declarar que trabaja para una institución si realmente lo hace; la institución debe aprobarlo.
+            </li>
+          </ul>
+
+          <h2>7. Instituciones</h2>
+          <ul>
+            <li>
+              La institución solo debe aprobar a instructores que realmente trabajen con ella, ya que la calificación de sus
+              instructores forma parte de la suya.
+            </li>
+            <li>Puede quitar a un instructor de su perfil en cualquier momento.</li>
+          </ul>
+
+          <h2>8. Empresas</h2>
+          <ul>
             <li>
               La empresa es responsable de que los datos de sus trabajadores que proporciona para emitir constancias sean
               correctos y de contar con la autorización para compartirlos.
             </li>
             <li>
-              La empresa puede cancelar un curso contratado únicamente cuando falten más de 24 horas para su inicio. Un
-              curso cancelado o completado no puede reactivarse.
+              Puede cancelar un curso contratado únicamente cuando falten más de 24 horas para su inicio. Un curso cancelado o
+              completado no puede reactivarse.
             </li>
-            <li>
-              El pago del curso se acuerda directamente entre la empresa y el instructor, salvo que la plataforma indique
-              otra cosa.
-            </li>
+            <li>El pago del curso se acuerda directamente entre la empresa y el instructor.</li>
           </ul>
 
-          <h2>6. Constancias DC-3</h2>
+          <h2>9. Constancias DC-3</h2>
           <ul>
             <li>
               Los archivos de las constancias se eliminan automáticamente a los 5 días de generarse: el instructor y la
@@ -88,47 +144,55 @@ export default function Terminos() {
             </li>
             <li>
               Cada constancia lleva un número de serie y un código QR que permite a cualquier persona verificar su
-              autenticidad en <Link to="/verificar">la página de verificación</Link>. Una constancia emitida no se revoca.
+              autenticidad en <Link to="/verificar">la página de verificación</Link>. Una constancia emitida no se revoca y
+              sigue siendo verificable aunque el instructor elimine su cuenta.
             </li>
           </ul>
 
-          <h2>7. Evaluaciones</h2>
+          <h2>10. Evaluaciones</h2>
           <p>
-            Las evaluaciones de los participantes son anónimas y alimentan la calificación pública de cada instructor.
-            Está prohibido manipularlas, por ejemplo, llenándolas en nombre de los participantes. Detectar esta conducta es
-            causa de suspensión de la cuenta.
+            Las evaluaciones de los participantes son anónimas y alimentan la calificación pública de cada instructor y de su
+            institución. Está prohibido manipularlas, por ejemplo, llenándolas en nombre de los participantes; detectar esta
+            conducta es causa de suspensión de la cuenta.
           </p>
 
-          <h2>8. Propiedad intelectual</h2>
+          <h2>11. Eliminación de la cuenta</h2>
+          <p>
+            Puedes eliminar tu cuenta desde tu panel, siempre que no tengas cursos pendientes, confirmados o en curso. Los
+            efectos sobre tus datos se describen en el <Link to="/privacidad">Aviso de privacidad</Link>. Eliminar la cuenta no
+            genera reembolsos de periodos ya pagados.
+          </p>
+
+          <h2>12. Propiedad intelectual</h2>
           <p>
             La plataforma, su marca y su diseño pertenecen a CertificaHub. Los materiales que cada instructor sube (por
             ejemplo, sus exámenes) siguen siendo suyos; nos autoriza a usarlos solo para prestar el servicio.
           </p>
 
-          <h2>9. Limitación de responsabilidad</h2>
+          <h2>13. Limitación de responsabilidad</h2>
           <p>
             CertificaHub no garantiza la calidad de los cursos, el cumplimiento de los acuerdos entre empresas e
-            instructores, ni la validez legal de las constancias emitidas por los instructores. La plataforma se ofrece
-            “tal cual”, y procuramos que esté disponible de forma continua, sin garantizar que esté libre de
-            interrupciones.
+            instructores, ni la validez legal de las constancias emitidas por los instructores. La información del padrón de
+            la STPS se muestra tal como la publica esa dependencia. La plataforma se ofrece “tal cual”, y procuramos que esté
+            disponible de forma continua, sin garantizar que esté libre de interrupciones.
           </p>
 
-          <h2>10. Cambios a estos términos</h2>
+          <h2>14. Cambios a estos términos</h2>
           <p>
-            Podemos modificar estos términos. Los cambios se publicarán en esta página con su fecha de actualización; si
-            son relevantes, te lo informaremos al iniciar sesión.
+            Podemos modificar estos términos. Los cambios se publicarán en esta página con su fecha de actualización; si son
+            relevantes, te lo informaremos al iniciar sesión.
           </p>
 
-          <h2>11. Ley aplicable y jurisdicción</h2>
+          <h2>15. Ley aplicable y jurisdicción</h2>
           <p>
-            Estos términos se rigen por las leyes de los Estados Unidos Mexicanos. Para cualquier controversia, las partes
-            se someten a los tribunales competentes de <Pendiente>ciudad y estado</Pendiente>, renunciando a cualquier otro
-            fuero que pudiera corresponderles.
+            Estos términos se rigen por las leyes de los Estados Unidos Mexicanos. Para cualquier controversia, las partes se
+            someten a los tribunales competentes de {RESPONSABLE.jurisdiccion}, renunciando a cualquier otro fuero que
+            pudiera corresponderles.
           </p>
 
-          <h2>12. Contacto</h2>
+          <h2>16. Contacto</h2>
           <p>
-            Para dudas sobre estos términos escríbenos a <Pendiente>correo de contacto</Pendiente>.
+            Para dudas sobre estos términos escríbenos a <DatoNegocio valor={RESPONSABLE.correoContacto} />.
           </p>
         </article>
       </div>

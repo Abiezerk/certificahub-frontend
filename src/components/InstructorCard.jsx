@@ -17,7 +17,7 @@ export default function InstructorCard({ instructor, onVerDetalle, canContratar 
           </div>
         </div>
         <div className={`stamp ${verificado ? '' : 'pending'}`}>
-          {verificado ? 'DC-5\nVerificado' : 'DC-5\nPendiente'}
+          {verificado ? 'STPS\nVerificado' : 'STPS\nPendiente'}
         </div>
       </div>
 

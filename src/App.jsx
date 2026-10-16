@@ -15,6 +15,7 @@ import Evaluar from './pages/Evaluar'
 import Verificar from './pages/Verificar'
 import AvisoPrivacidad from './pages/AvisoPrivacidad'
 import Terminos from './pages/Terminos'
+import Precios from './pages/Precios'
 import NoEncontrada from './pages/NoEncontrada'
 import Footer from './components/Footer'
 import usePageMeta from './hooks/usePageMeta'
@@ -43,6 +44,7 @@ export default function App() {
         <Route path="/instituciones/:id" element={<InstitucionDetalle />} />
         <Route path="/privacidad" element={<AvisoPrivacidad />} />
         <Route path="/terminos" element={<Terminos />} />
+        <Route path="/precios" element={<Precios />} />
         <Route
           path="/panel"
           element={

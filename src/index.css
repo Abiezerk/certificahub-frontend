@@ -2247,3 +2247,185 @@ footer.site-footer {
   align-items: center;
   min-width: 0;
 }
+
+/* ============================================================
+   PRECIOS
+   ============================================================ */
+.precios-cabecera {
+  text-align: center;
+  max-width: 640px;
+  margin: 0 auto 32px;
+}
+
+.precios-cabecera h1 {
+  font-size: 2rem;
+  margin: 6px 0 8px;
+}
+
+.precios-cabecera p {
+  color: var(--ink-soft);
+  margin: 0;
+}
+
+.precios-etiqueta {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--seal-dark);
+}
+
+.precios-planes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 18px;
+  max-width: 780px;
+  margin: 0 auto 28px;
+}
+
+.precios-plan {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 26px 24px;
+  display: flex;
+  flex-direction: column;
+}
+
+.precios-plan.destacado {
+  border: 2px solid var(--seal);
+}
+
+.precios-insignia {
+  position: absolute;
+  top: -12px;
+  right: 20px;
+  background: var(--seal);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 999px;
+}
+
+.precios-plan h2 {
+  margin: 0;
+  font-size: 1.3rem;
+}
+
+.precios-plan-desc {
+  color: var(--ink-soft);
+  font-size: 0.88rem;
+  margin: 4px 0 16px;
+  min-height: 2.6em;
+}
+
+.precios-monto {
+  margin: 0;
+}
+
+.precios-monto strong {
+  font-size: 2.2rem;
+  font-family: var(--font-display);
+}
+
+.precios-monto span {
+  color: var(--ink-soft);
+}
+
+.precios-iva {
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+  margin: 0 0 14px;
+}
+
+.precios-limite {
+  background: var(--paper);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  margin: 0 0 18px;
+  font-size: 0.92rem;
+}
+
+.precios-plan .btn {
+  margin-top: auto;
+  text-align: center;
+}
+
+.precios-incluye,
+.precios-faq {
+  max-width: 780px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.precios-incluye h2,
+.precios-faq h2 {
+  font-size: 1.15rem;
+  margin: 0 0 12px;
+}
+
+.precios-incluye ul {
+  margin: 0;
+  padding-left: 20px;
+  line-height: 1.8;
+}
+
+.precios-faq {
+  margin-top: 28px;
+}
+
+.precios-faq details {
+  padding: 14px 18px;
+}
+
+.precios-faq details + details {
+  margin-top: 10px;
+}
+
+.precios-faq summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.precios-faq details p {
+  margin: 10px 0 0;
+  color: var(--ink-soft);
+}
+
+.precios-legal {
+  text-align: center;
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+  margin-top: 24px;
+}
+
+/* ============================================================
+   ELIMINAR CUENTA
+   ============================================================ */
+.zona-peligro {
+  border-color: #e9c8c3;
+}
+
+.boton-peligro {
+  color: var(--alert);
+  border-color: #e3b5ae;
+}
+
+.boton-peligro-lleno {
+  background: var(--alert);
+  border-color: var(--alert);
+}
+
+.zona-peligro-form {
+  max-width: 560px;
+}
+
+.zona-peligro-lista {
+  font-size: 0.88rem;
+  color: var(--ink-soft);
+  padding-left: 20px;
+  margin: 0 0 14px;
+  line-height: 1.6;
+}

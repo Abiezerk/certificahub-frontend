@@ -19,7 +19,8 @@ export default function Marketplace() {
           <div className="hero-eyebrow">Plataforma para capacitación STPS</div>
           <h1>Contrata instructores con la confianza a la vista.</h1>
           <p>
-            Cada instructor certificado con DC-5 muestra su medidor de confiabilidad real: qué tan seguido los
+            Cada instructor está verificado en el padrón de agentes capacitadores de la STPS y muestra su medidor de
+            confiabilidad real: qué tan seguido los
             participantes de sus cursos realmente evalúan, no solo un promedio bonito.
           </p>
           <div className="hero-actions">

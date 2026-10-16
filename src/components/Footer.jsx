@@ -7,6 +7,7 @@ export default function Footer() {
       <div className="container site-footer-contenido">
         <span>© {new Date().getFullYear()} CertificaHub — capacitación empresarial con evaluaciones reales</span>
         <nav className="site-footer-enlaces" aria-label="Enlaces legales">
+          <Link to="/precios">Precios para instructores</Link>
           <Link to="/privacidad">Aviso de privacidad</Link>
           <Link to="/terminos">Términos y condiciones</Link>
           <Link to="/verificar">Verificar constancia</Link>
