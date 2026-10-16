@@ -3,7 +3,7 @@ import StarRating from './StarRating'
 const COLORS = {
   'Muy confiable': '#0f7a5c',
   'Confiable': '#3fa483',
-  'Moderado': '#e2a63b',
+  'Moderado': '#c0841a',
   'Poco': '#b23a2e'
 }
 

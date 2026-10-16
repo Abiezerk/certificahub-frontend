@@ -40,10 +40,12 @@ export default function InstructorCard({ instructor, onVerDetalle, canContratar 
             <img
               src={instructor.profilePictureUrl}
               alt={instructor.nombreCompleto}
+              loading="lazy"
+              decoding="async"
               style={{ width: '100%', height: '100%', objectFit: 'cover' }}
             />
           ) : (
-            <span style={{ fontSize: 17, fontWeight: 700, color: '#999' }}>
+            <span style={{ fontSize: 17, fontWeight: 700, color: '#5f665e' }}>
               {instructor.nombreCompleto?.charAt(0) || '?'}
             </span>
           )}

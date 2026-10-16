@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import api, { apiErrorMessage } from '../api/client'
+import usePageMeta from '../hooks/usePageMeta'
 
 export default function Evaluar() {
+  usePageMeta({ titulo: 'Evalúa tu curso', noindex: true })
   const { token } = useParams()
   const [validando, setValidando] = useState(true)
   const [info, setInfo] = useState(null)

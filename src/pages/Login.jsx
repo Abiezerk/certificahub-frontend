@@ -2,8 +2,10 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { apiErrorMessage } from '../api/client'
+import usePageMeta from '../hooks/usePageMeta'
 
 export default function Login() {
+  usePageMeta({ titulo: 'Iniciar sesión', descripcion: 'Entra a tu panel de CertificaHub.' })
   const { login } = useAuth()
   const navigate = useNavigate()
   const [form, setForm] = useState({ email: '', password: '' })

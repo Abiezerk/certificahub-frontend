@@ -3,6 +3,25 @@ import api, { apiErrorMessage } from '../api/client'
 import PrecioChips from '../components/PrecioChips'
 import AnaliticaPanel from '../components/AnaliticaPanel'
 
+// Recorta la foto al centro en un cuadrado de 400 px y la convierte a JPEG (calidad 0.85).
+// Una foto de celular de 3-5 MB queda en unos 30-60 KB y se sigue viendo nítida en el círculo.
+async function comprimirFotoPerfil(archivo, lado = 400) {
+  const imagen = await createImageBitmap(archivo)
+  const recorte = Math.min(imagen.width, imagen.height)
+  const canvas = document.createElement('canvas')
+  canvas.width = lado
+  canvas.height = lado
+  const ctx = canvas.getContext('2d')
+  ctx.fillStyle = '#ffffff' // fondo blanco por si la imagen original es PNG con transparencia
+  ctx.fillRect(0, 0, lado, lado)
+  ctx.drawImage(imagen, (imagen.width - recorte) / 2, (imagen.height - recorte) / 2, recorte, recorte, 0, 0, lado, lado)
+  imagen.close?.()
+  const blob = await new Promise((resolve, reject) =>
+    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('No se pudo comprimir'))), 'image/jpeg', 0.85)
+  )
+  return new File([blob], 'foto-perfil.jpg', { type: 'image/jpeg' })
+}
+
 const TABS = ['Mi perfil', 'Próximos cursos', 'Calendario', 'Especialidades y precios', 'Certificados', 'Estadísticas']
 
 const DIAS_SEMANA = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
@@ -148,7 +167,7 @@ export default function InstructorDashboard() {
     }
   }
 
-  function handleFotoChange(e) {
+  async function handleFotoChange(e) {
     const file = e.target.files?.[0]
     if (!file) return
 
@@ -157,13 +176,23 @@ export default function InstructorDashboard() {
       flash('error', 'Formato no permitido. Usa JPG, PNG o WEBP.')
       return
     }
-    if (file.size > 5 * 1024 * 1024) {
-      flash('error', 'La imagen no puede pesar más de 5 MB')
+    if (file.size > 15 * 1024 * 1024) {
+      flash('error', 'La imagen no puede pesar más de 15 MB')
       return
     }
 
-    setFotoFile(file)
-    setFotoPreview(URL.createObjectURL(file))
+    // La foto se muestra como un círculo pequeño: se recorta y comprime antes de subirla
+    // (de varios MB a decenas de KB), para que el ranking y el marketplace carguen rápido.
+    let comprimida
+    try {
+      comprimida = await comprimirFotoPerfil(file)
+    } catch {
+      flash('error', 'No se pudo leer la imagen. Prueba con otra foto (JPG, PNG o WEBP).')
+      return
+    }
+
+    setFotoFile(comprimida)
+    setFotoPreview(URL.createObjectURL(comprimida))
   }
 
   async function subirFoto() {
@@ -917,7 +946,7 @@ export default function InstructorDashboard() {
                     style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                   />
                 ) : (
-                  <span style={{ fontSize: 28, fontWeight: 700, color: '#999' }}>
+                  <span style={{ fontSize: 28, fontWeight: 700, color: '#5f665e' }}>
                     {perfil.nombreCompleto?.charAt(0) || '?'}
                   </span>
                 )}

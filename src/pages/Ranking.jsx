@@ -3,6 +3,7 @@ import apiClient from "../api/client";
 import PremiumBadge from "../components/PremiumBadge";
 import InstructorDetailModal from "../components/InstructorDetailModal";
 import "../styles/Ranking.css";
+import usePageMeta from '../hooks/usePageMeta'
 
 const ESTADOS_MEXICO = [
   "Aguascalientes",
@@ -38,6 +39,10 @@ const ESTADOS_MEXICO = [
 ];
 
 export default function Ranking() {
+  usePageMeta({
+    titulo: 'Ranking de instructores',
+    descripcion: 'Compara instructores de capacitación STPS por calificación, especialidad y estado. Contrata al indicado para tu empresa.'
+  })
   const [instructores, setInstructores] = useState([]);
   const [filtroEspecialidad, setFiltroEspecialidad] = useState("todas");
   const [filtroCalificacion, setFiltroCalificacion] = useState("cualquiera");
@@ -263,7 +268,7 @@ export default function Ranking() {
                     <div className="instructor-simple">
                       <div className="instructor-simple-avatar">
                         {instructor.profilePictureUrl ? (
-                          <img src={instructor.profilePictureUrl} alt={instructor.nombreCompleto} />
+                          <img src={instructor.profilePictureUrl} alt={instructor.nombreCompleto} loading="lazy" decoding="async" width="40" height="40" />
                         ) : (
                           <span>{instructor.nombreCompleto?.charAt(0) || "?"}</span>
                         )}

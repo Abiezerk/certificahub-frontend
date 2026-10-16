@@ -10,9 +10,15 @@ import InstructorDashboard from './pages/InstructorDashboard'
 import EmpresaDashboard from './pages/EmpresaDashboard'
 import Evaluar from './pages/Evaluar'
 import Verificar from './pages/Verificar'
+import AvisoPrivacidad from './pages/AvisoPrivacidad'
+import Terminos from './pages/Terminos'
+import NoEncontrada from './pages/NoEncontrada'
+import Footer from './components/Footer'
+import usePageMeta from './hooks/usePageMeta'
 
 function Panel() {
   const { user } = useAuth()
+  usePageMeta({ titulo: 'Mi panel', noindex: true })
   if (user.userType === 'Instructor') return <InstructorDashboard />
   return <EmpresaDashboard />
 }
@@ -29,6 +35,8 @@ export default function App() {
         <Route path="/evaluar/:token" element={<Evaluar />} />
         <Route path="/verificar" element={<Verificar />} />
         <Route path="/verificar/:numeroSerie" element={<Verificar />} />
+        <Route path="/privacidad" element={<AvisoPrivacidad />} />
+        <Route path="/terminos" element={<Terminos />} />
         <Route
           path="/panel"
           element={
@@ -37,7 +45,9 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+        <Route path="*" element={<NoEncontrada />} />
       </Routes>
+      <Footer />
     </>
   )
 }

@@ -3,8 +3,10 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import InstructorDestacados from '../components/InstructorDestacados'
 import InstructorDetailModal from '../components/InstructorDetailModal'
+import usePageMeta from '../hooks/usePageMeta'
 
 export default function Marketplace() {
+  usePageMeta({})
   const { user } = useAuth()
   const esEmpresa = user?.userType === 'Empresa'
 
@@ -37,7 +39,6 @@ export default function Marketplace() {
 
       {detalle && <InstructorDetailModal instructor={detalle} onClose={() => setDetalle(null)} />}
 
-      <footer className="site-footer">CertificaHub — capacitación empresarial con evaluaciones reales</footer>
     </>
   )
 }

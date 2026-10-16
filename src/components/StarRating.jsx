@@ -17,7 +17,7 @@ export default function StarRating({ rating = 0, size = 16, maxStars = 5 }) {
             {fill > 0 && (
               <div style={{ position: 'absolute', top: 0, left: 0, width: `${fill * 100}%`, height: '100%', overflow: 'hidden' }}>
                 <svg width={size} height={size} viewBox="0 0 24 24">
-                  <path d={STAR_PATH} fill="#f5b301" stroke="#f5b301" strokeWidth="1.5" strokeLinejoin="round" />
+                  <path d={STAR_PATH} fill="#c0841a" stroke="#c0841a" strokeWidth="1.5" strokeLinejoin="round" />
                 </svg>
               </div>
             )}

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import api from '../api/client'
+import usePageMeta from '../hooks/usePageMeta'
 
 // Página PÚBLICA de verificación de autenticidad de un DC-3. Se abre al escanear el QR impreso
 // en la constancia (/verificar/:numeroSerie) o escribiendo el número de serie a mano (/verificar).
@@ -21,6 +22,12 @@ function fechaEmision(valor) {
 
 export default function Verificar() {
   const { numeroSerie } = useParams()
+  // La página de búsqueda se puede indexar; el resultado de un DC-3 (datos de un trabajador) no
+  usePageMeta({
+    titulo: 'Verificar constancia DC-3',
+    descripcion: 'Comprueba en línea si una constancia DC-3 emitida a través de CertificaHub es auténtica.',
+    noindex: Boolean(numeroSerie)
+  })
   const navigate = useNavigate()
   const [busqueda, setBusqueda] = useState(numeroSerie || '')
   const [estado, setEstado] = useState(numeroSerie ? 'cargando' : 'inicio') // inicio | cargando | valido | noEncontrado | error

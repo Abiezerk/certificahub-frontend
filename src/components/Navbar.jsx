@@ -1,9 +1,18 @@
-import { Link, useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
 export default function Navbar() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
+  // Menú desplegable para celular (en escritorio los enlaces se ven directo en la barra)
+  const [menuAbierto, setMenuAbierto] = useState(false)
+
+  // Al cambiar de página se cierra el menú
+  useEffect(() => {
+    setMenuAbierto(false)
+  }, [location.pathname])
 
   function handleLogout() {
     logout()
@@ -20,11 +29,12 @@ export default function Navbar() {
 
         <div className="nav-links">
           <Link to="/ranking">Buscar instructores</Link>
+          <Link to="/verificar">Verificar constancia</Link>
           {user && <Link to="/panel">Mi panel</Link>}
         </div>
 
         {user ? (
-          <div className="nav-user">
+          <div className="nav-user nav-escritorio">
             <span className="nav-user-name">
               {user.firstName} · {user.userType}
             </span>
@@ -33,7 +43,7 @@ export default function Navbar() {
             </button>
           </div>
         ) : (
-          <div className="nav-user">
+          <div className="nav-user nav-escritorio">
             <Link to="/login" className="btn btn-ghost btn-sm">
               Entrar
             </Link>
@@ -42,7 +52,47 @@ export default function Navbar() {
             </Link>
           </div>
         )}
+
+        <button
+          type="button"
+          className="nav-hamburguesa"
+          aria-label={menuAbierto ? 'Cerrar menú' : 'Abrir menú'}
+          aria-expanded={menuAbierto}
+          aria-controls="menu-movil"
+          onClick={() => setMenuAbierto((v) => !v)}
+        >
+          {menuAbierto ? '✕' : '☰'}
+        </button>
       </div>
+
+      {menuAbierto && (
+        <div className="nav-movil" id="menu-movil">
+          <Link to="/ranking">Buscar instructores</Link>
+          <Link to="/verificar">Verificar constancia</Link>
+          {user ? (
+            <>
+              <Link to="/panel">Mi panel</Link>
+              <div className="nav-movil-usuario">
+                <span>
+                  {user.firstName} · {user.userType}
+                </span>
+                <button className="btn btn-outline btn-sm" onClick={handleLogout}>
+                  Salir
+                </button>
+              </div>
+            </>
+          ) : (
+            <div className="nav-movil-acciones">
+              <Link to="/login" className="btn btn-outline btn-sm">
+                Entrar
+              </Link>
+              <Link to="/registro" className="btn btn-primary btn-sm">
+                Registrarme
+              </Link>
+            </div>
+          )}
+        </div>
+      )}
     </nav>
   )
 }

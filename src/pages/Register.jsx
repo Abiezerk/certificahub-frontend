@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { apiErrorMessage } from '../api/client'
+import usePageMeta from '../hooks/usePageMeta'
+import { VERSION_AVISO_PRIVACIDAD } from './AvisoPrivacidad'
 
 const ESTADOS_MEXICO = [
   'Aguascalientes', 'Baja California', 'Baja California Sur', 'Campeche', 'Chiapas',
@@ -21,6 +23,10 @@ const emptyEmpresa = {
 }
 
 export default function Register() {
+  usePageMeta({
+    titulo: 'Crear cuenta',
+    descripcion: 'Regístrate como instructor para ofrecer tus cursos, o como empresa para contratar capacitación STPS sin costo.'
+  })
   const { registerInstructor, registerEmpresa } = useAuth()
   const navigate = useNavigate()
   const [role, setRole] = useState('Instructor')
@@ -28,16 +34,19 @@ export default function Register() {
   const [empresaForm, setEmpresaForm] = useState(emptyEmpresa)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  // Consentimiento expreso al Aviso de privacidad y los Términos (obligatorio para registrarse)
+  const [aceptaLegal, setAceptaLegal] = useState(false)
 
   async function handleSubmit(e) {
     e.preventDefault()
     setError('')
     setLoading(true)
     try {
+      const consentimiento = { aceptaAvisoPrivacidad: aceptaLegal, versionAvisoPrivacidad: VERSION_AVISO_PRIVACIDAD }
       if (role === 'Instructor') {
-        await registerInstructor(instructorForm)
+        await registerInstructor({ ...instructorForm, ...consentimiento })
       } else {
-        await registerEmpresa(empresaForm)
+        await registerEmpresa({ ...empresaForm, ...consentimiento })
       }
       navigate('/panel')
     } catch (err) {
@@ -89,7 +98,7 @@ export default function Register() {
             </div>
             <div className="form-group">
               <label>Contraseña <span style={{ color: 'var(--alert)' }}>*</span></label>
-              <input type="password" required minLength={6} placeholder="Mínimo 6 caracteres" value={instructorForm.password}
+              <input type="password" required minLength={8} placeholder="Mínimo 8 caracteres" value={instructorForm.password}
                 onChange={(e) => setInstructorForm({ ...instructorForm, password: e.target.value })} />
             </div>
             <div className="form-row">
@@ -115,6 +124,14 @@ export default function Register() {
                 onChange={(e) => setInstructorForm({ ...instructorForm, bio: e.target.value })}
                 placeholder="Especialidad, años de experiencia, enfoque de tus cursos…" />
             </div>
+            <label className="casilla-legal">
+              <input type="checkbox" required checked={aceptaLegal} onChange={(e) => setAceptaLegal(e.target.checked)} />
+              <span>
+                He leído y acepto el{' '}
+                <Link to="/privacidad" target="_blank" rel="noopener">Aviso de privacidad</Link> y los{' '}
+                <Link to="/terminos" target="_blank" rel="noopener">Términos y condiciones</Link>.
+              </span>
+            </label>
             <button className="btn btn-primary btn-block" disabled={loading}>
               {loading ? 'Creando cuenta…' : 'Crear cuenta de instructor'}
             </button>
@@ -140,7 +157,7 @@ export default function Register() {
             </div>
             <div className="form-group">
               <label>Contraseña <span style={{ color: 'var(--alert)' }}>*</span></label>
-              <input type="password" required minLength={6} placeholder="Mínimo 6 caracteres" value={empresaForm.password}
+              <input type="password" required minLength={8} placeholder="Mínimo 8 caracteres" value={empresaForm.password}
                 onChange={(e) => setEmpresaForm({ ...empresaForm, password: e.target.value })} />
             </div>
             <div className="form-group">
@@ -165,6 +182,14 @@ export default function Register() {
               <input placeholder="Calle, número, colonia, ciudad, CP" value={empresaForm.domicilioFiscal}
                 onChange={(e) => setEmpresaForm({ ...empresaForm, domicilioFiscal: e.target.value })} />
             </div>
+            <label className="casilla-legal">
+              <input type="checkbox" required checked={aceptaLegal} onChange={(e) => setAceptaLegal(e.target.checked)} />
+              <span>
+                He leído y acepto el{' '}
+                <Link to="/privacidad" target="_blank" rel="noopener">Aviso de privacidad</Link> y los{' '}
+                <Link to="/terminos" target="_blank" rel="noopener">Términos y condiciones</Link>.
+              </span>
+            </label>
             <button className="btn btn-primary btn-block" disabled={loading}>
               {loading ? 'Creando cuenta…' : 'Crear cuenta de empresa'}
             </button>

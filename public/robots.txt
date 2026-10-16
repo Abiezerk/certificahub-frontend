@@ -1,0 +1,9 @@
+# CertificaHub — https://certificahub.mx
+User-agent: *
+Allow: /
+# Páginas privadas o con datos personales: no deben aparecer en buscadores
+Disallow: /panel
+Disallow: /evaluar/
+Disallow: /verificar/
+
+Sitemap: https://certificahub.mx/sitemap.xml
