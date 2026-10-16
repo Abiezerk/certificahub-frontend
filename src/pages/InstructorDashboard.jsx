@@ -87,9 +87,9 @@ export default function InstructorDashboard() {
   const [editandoId, setEditandoId] = useState(null)
   const [formAbierto, setFormAbierto] = useState(false)
   const [nuevaEsp, setNuevaEsp] = useState('')
-  const [codigoNOM, setCodigoNOM] = useState('')
-  const [nombreOficialCurso, setNombreOficialCurso] = useState('')
-  const [duracionHoras, setDuracionHoras] = useState('')
+  // Curso registrado ante la STPS del que sale la especialidad (nombre, horas y área no se editan)
+  const [cursoStpsId, setCursoStpsId] = useState('')
+  const [misCursosStps, setMisCursosStps] = useState([])
   const [usaParticipante, setUsaParticipante] = useState(true)
   const [usaGrupo, setUsaGrupo] = useState(false)
   const [precioParticipante, setPrecioParticipante] = useState('')
@@ -116,18 +116,20 @@ export default function InstructorDashboard() {
 
   async function cargarTodo() {
     try {
-      const [t, e, mp, c, ex] = await Promise.all([
+      const [t, e, mp, c, ex, cs] = await Promise.all([
         api.get('/transacciones/instructor/proximas'),
         api.get('/especialidades'),
         api.get('/instructores/mis-especialidades-precios'),
         api.get('/certificados/instructor'),
-        api.get('/examenes/plantillas')
+        api.get('/examenes/plantillas'),
+        api.get('/instructores/mis-cursos-stps')
       ])
       setTransacciones(t.data)
       setEspecialidades(e.data)
       setMisEspecialidades(mp.data)
       setCertificados(c.data)
       setExamenes(ex.data)
+      setMisCursosStps(cs.data)
     } catch (err) {
       setMsg({ type: 'error', text: apiErrorMessage(err) })
     }
@@ -218,6 +220,12 @@ export default function InstructorDashboard() {
     (esp) => !misEspecialidades.some((m) => m.especialidadId === esp.id)
   )
 
+  // Cursos de la STPS que se pueden elegir: vigentes y que no se ofrezcan ya en otra categoría
+  const cursosElegibles = misCursosStps.filter(
+    (c) => c.vigente && (!c.ofrecidoEnEspecialidadId || c.ofrecidoEnEspecialidadId === editandoId)
+  )
+  const cursoSeleccionado = misCursosStps.find((c) => c.id === cursoStpsId)
+
   function agregarRango() {
     if (rangosGrupo.length >= 4) return
     setRangosGrupo([...rangosGrupo, { ...emptyRango }])
@@ -234,9 +242,7 @@ export default function InstructorDashboard() {
   function resetForm() {
     setEditandoId(null)
     setNuevaEsp('')
-    setCodigoNOM('')
-    setNombreOficialCurso('')
-    setDuracionHoras('')
+    setCursoStpsId('')
     setUsaParticipante(true)
     setUsaGrupo(false)
     setPrecioParticipante('')
@@ -261,9 +267,7 @@ export default function InstructorDashboard() {
     setFormAbierto(true)
     setEditandoId(item.especialidadId)
     setNuevaEsp(String(item.especialidadId))
-    setCodigoNOM(item.codigoNOM ?? '')
-    setNombreOficialCurso(item.nombreOficialCurso ?? '')
-    setDuracionHoras(item.duracionHoras ?? '')
+    setCursoStpsId(item.cursoVigente && item.cursoStpsId ? item.cursoStpsId : '')
     const tieneParticipante = item.precioPorParticipante != null
     const tieneGrupo = item.rango1Precio != null || item.rango2Precio != null || item.rango3Precio != null || item.rango4Precio != null
     setUsaParticipante(tieneParticipante || !tieneGrupo)
@@ -287,6 +291,10 @@ export default function InstructorDashboard() {
   async function guardarEspecialidadConPrecio(e) {
     e.preventDefault()
     if (!nuevaEsp) return
+    if (!cursoStpsId) {
+      flash('error', 'Elige el curso de tu registro de la STPS que corresponde a esta especialidad')
+      return
+    }
     if (!usaParticipante && !usaGrupo) {
       flash('error', 'Activa al menos un tipo de precio (por participante o por grupo)')
       return
@@ -317,9 +325,7 @@ export default function InstructorDashboard() {
     try {
       const payload = {
         especialidadId: Number(nuevaEsp),
-        codigoNOM: codigoNOM || null,
-        nombreOficialCurso: nombreOficialCurso || null,
-        duracionHoras: duracionHoras ? Number(duracionHoras) : null,
+        cursoStpsId,
         usaParticipante,
         usaGrupo
       }
@@ -1170,12 +1176,20 @@ export default function InstructorDashboard() {
                     <div className="row-item" key={p.especialidadId}>
                       <div className="row-main">
                         <span className="row-title">{p.especialidadNombre}</span>
-                        {(p.codigoNOM || p.nombreOficialCurso || p.duracionHoras) && (
+                        {(p.nombreOficialCurso || p.duracionHoras) && (
                           <span className="row-sub">
-                            {p.codigoNOM && <>{p.codigoNOM}</>}
-                            {p.codigoNOM && p.nombreOficialCurso && ' · '}
                             {p.nombreOficialCurso && <>{p.nombreOficialCurso}</>}
                             {p.duracionHoras && <> · {p.duracionHoras}h</>}
+                            {p.areaTematica && <> · {p.areaTematica}</>}
+                          </span>
+                        )}
+                        {!p.cursoVigente && (
+                          <span className="aviso-curso-stps">
+                            ⚠ {p.cursoStpsId
+                              ? 'Este curso ya no aparece vigente en tu registro de la STPS.'
+                              : 'No está ligada a un curso de tu registro de la STPS.'}{' '}
+                            Las empresas no la ven y no puedes emitir constancias.{' '}
+                            {!p.cursoStpsId && 'Edítala y elige tu curso.'}
                           </span>
                         )}
                         <div style={{ marginTop: 4 }}>
@@ -1191,7 +1205,7 @@ export default function InstructorDashboard() {
                       </div>
                       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                         <button className="btn btn-outline btn-sm" onClick={() => abrirEdicion(p)}>
-                          Editar precio
+                          Editar
                         </button>
                         <label
                           className="btn btn-outline btn-sm"
@@ -1273,14 +1287,48 @@ export default function InstructorDashboard() {
 
               {formAbierto && (
                 <>
-                  {!editandoId && especialidadesDisponibles.length === 0 ? (
+                  {misCursosStps.length === 0 ? (
+                    <p style={{ color: 'var(--ink-soft)', fontSize: '0.88rem' }}>
+                      Primero verifica tu registro de agente capacitador (arriba de esta página). Al verificarte traemos los
+                      cursos que tienes registrados ante la STPS y aquí podrás elegir cuáles ofrecer.
+                    </p>
+                  ) : !editandoId && cursosElegibles.length === 0 ? (
+                    <p style={{ color: 'var(--ink-soft)', fontSize: '0.88rem' }}>
+                      Ya ofreces todos tus cursos vigentes registrados ante la STPS.
+                    </p>
+                  ) : !editandoId && especialidadesDisponibles.length === 0 ? (
                     <p style={{ color: 'var(--ink-soft)', fontSize: '0.88rem' }}>
                       Ya agregaste todas las especialidades disponibles.
                     </p>
                   ) : (
                     <form onSubmit={guardarEspecialidadConPrecio}>
                       <div className="form-group">
-                    <label>Especialidad</label>
+                        <label>Curso registrado ante la STPS</label>
+                        <select
+                          required
+                          value={cursoStpsId}
+                          onChange={(e) => {
+                            const id = e.target.value
+                            setCursoStpsId(id)
+                            // Sugerir la categoría del marketplace que corresponde al curso
+                            const curso = misCursosStps.find((c) => c.id === id)
+                            const sugerida = curso?.especialidadSugeridaId
+                            if (!editandoId && sugerida && especialidadesDisponibles.some((esp) => esp.id === sugerida)) {
+                              setNuevaEsp(String(sugerida))
+                            }
+                          }}
+                        >
+                          <option value="">Selecciona uno de tus cursos…</option>
+                          {cursosElegibles.map((c) => (
+                            <option key={c.id} value={c.id}>
+                              {c.nombre}{c.duracionHoras ? ` (${c.duracionHoras} h)` : ''}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="form-group">
+                    <label>Categoría en el marketplace</label>
                     {editandoId ? (
                       <p style={{ fontWeight: 600 }}>
                         {especialidades.find((e) => e.id === editandoId)?.nombre}
@@ -1295,34 +1343,19 @@ export default function InstructorDashboard() {
                     )}
                   </div>
 
-                  <div className="form-group">
-                    <label>Código NOM oficial</label>
-                    <input
-                      placeholder="Ej. NOM-009-STPS-2011"
-                      value={codigoNOM}
-                      onChange={(e) => setCodigoNOM(e.target.value)}
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label>Nombre oficial del curso (para el DC-3)</label>
-                    <input
-                      placeholder="Ej. CONDICIONES DE SEGURIDAD PARA REALIZAR TRABAJOS EN ALTURA"
-                      value={nombreOficialCurso}
-                      onChange={(e) => setNombreOficialCurso(e.target.value)}
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label>Duración en horas</label>
-                    <input
-                      type="number"
-                      min="1"
-                      placeholder="Ej. 8"
-                      value={duracionHoras}
-                      onChange={(e) => setDuracionHoras(e.target.value)}
-                    />
-                  </div>
+                  {cursoSeleccionado && (
+                    <div className="curso-stps-ficha">
+                      <span className="curso-stps-ficha-titulo">Datos oficiales para el DC-3 (de tu registro de la STPS)</span>
+                      <strong>{cursoSeleccionado.nombre}</strong>
+                      <span>
+                        {cursoSeleccionado.duracionHoras ? `${cursoSeleccionado.duracionHoras} horas` : 'Duración no indicada'}
+                        {cursoSeleccionado.areaTematica && <> · Área temática: {cursoSeleccionado.areaTematica}</>}
+                      </span>
+                      <span className="campo-ayuda">
+                        Se copian tal cual del padrón de la STPS y no se pueden editar, para que tus constancias coincidan con tu registro.
+                      </span>
+                    </div>
+                  )}
 
                   <div className="checkbox-row" style={{ marginBottom: 16 }}>
                     <label>

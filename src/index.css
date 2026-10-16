@@ -1969,3 +1969,30 @@ footer.site-footer {
   background: #fbe9e6;
   color: #8f2a20;
 }
+
+/* Especialidades ligadas a cursos de la STPS */
+.curso-stps-ficha {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  margin-bottom: 16px;
+  font-size: 0.9rem;
+}
+
+.curso-stps-ficha-titulo {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-soft);
+}
+
+.aviso-curso-stps {
+  display: block;
+  margin-top: 6px;
+  font-size: 0.8rem;
+  color: #8f2a20;
+}
