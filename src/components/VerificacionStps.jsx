@@ -90,16 +90,81 @@ export default function VerificacionStps({ onVerificado }) {
     }
   }
 
+  async function actualizarDesdeStps() {
+    setCargando(true)
+    setMensaje({ tipo: '', texto: '' })
+    try {
+      const { data } = await api.post('/verificacion/actualizar')
+      setMensaje({ tipo: data.resultado === 'Suspendido' || data.resultado === 'SigueSuspendido' ? 'error' : 'success', texto: data.message })
+      await cargarEstado()
+      onVerificado?.()
+    } catch (err) {
+      setMensaje({ tipo: 'error', texto: apiErrorMessage(err, 'No se pudo actualizar desde la STPS') })
+    } finally {
+      setCargando(false)
+    }
+  }
+
+  const ultimaRevision = estado?.fechaVerificacion
+    ? new Date(/[zZ]|[+-]\d{2}:\d{2}$/.test(estado.fechaVerificacion) ? estado.fechaVerificacion : `${estado.fechaVerificacion}Z`)
+        .toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' })
+    : null
+
   if (!estado) return null
   if (estado.estado === 'Verificado') {
     return (
-      <div className="verif-ok" role="status">
-        <span className="verif-ok-icono" aria-hidden="true">✓</span>
-        <span>
-          <strong>Agente capacitador verificado ante la STPS</strong> · RFC {estado.rfc} · {estado.cursosRegistrados}{' '}
-          {estado.cursosRegistrados === 1 ? 'curso registrado' : 'cursos registrados'}
+      <>
+        <div className="verif-ok" role="status">
+          <span className="verif-ok-icono" aria-hidden="true">✓</span>
+          <span className="verif-ok-texto">
+            <strong>Agente capacitador verificado ante la STPS</strong> · RFC {estado.rfc} · {estado.cursosRegistrados}{' '}
+            {estado.cursosRegistrados === 1 ? 'curso registrado' : 'cursos registrados'}
+            {ultimaRevision && <span className="verif-ok-fecha"> · Última revisión: {ultimaRevision}</span>}
+          </span>
+          <button
+            type="button"
+            className="btn btn-ghost btn-sm"
+            onClick={actualizarDesdeStps}
+            disabled={cargando}
+            title="¿Registraste un curso nuevo ante la STPS? Actualiza para poder ofrecerlo."
+          >
+            {cargando ? 'Consultando la STPS…' : '↻ Actualizar desde la STPS'}
+          </button>
+        </div>
+        {mensaje.texto && (
+          <div className={`banner ${mensaje.tipo === 'error' ? 'banner-error' : 'banner-success'}`}>{mensaje.texto}</div>
+        )}
+      </>
+    )
+  }
+
+  if (estado.estado === 'Suspendido') {
+    return (
+      <section className="verif-stps verif-suspendido card" aria-labelledby="verif-titulo">
+        <div className="verif-encabezado">
+          <span className="verif-sello" aria-hidden="true">STPS</span>
+          <div>
+            <h2 id="verif-titulo">Tu perfil está suspendido</h2>
+            <p>
+              En la última revisión, tu registro de agente capacitador (RFC {estado.rfc}) no aparece como activo en el
+              padrón de la STPS. Mientras tanto tu perfil no aparece en el ranking, las empresas no pueden contratarte y no
+              puedes emitir constancias DC-3. Tus datos y cursos se conservan.
+            </p>
+          </div>
+        </div>
+        {mensaje.texto && (
+          <div className={`banner ${mensaje.tipo === 'error' ? 'banner-error' : 'banner-success'}`}>{mensaje.texto}</div>
+        )}
+        <div className="verif-fila">
+          <button className="btn btn-primary" onClick={actualizarDesdeStps} disabled={cargando}>
+            {cargando ? 'Consultando la STPS…' : 'Ya está activo: volver a consultar'}
+          </button>
+        </div>
+        <span className="campo-ayuda">
+          Si regularizaste tu registro ante la STPS, consúltalo de nuevo y te reactivamos al momento.
+          {ultimaRevision && <> Última revisión: {ultimaRevision}.</>}
         </span>
-      </div>
+      </section>
     )
   }
 

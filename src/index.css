@@ -1996,3 +1996,20 @@ footer.site-footer {
   font-size: 0.8rem;
   color: #8f2a20;
 }
+
+.verif-ok-texto {
+  flex: 1;
+}
+
+.verif-ok-fecha {
+  color: var(--ink-soft);
+}
+
+.verif-suspendido {
+  border-left-color: var(--alert);
+}
+
+.verif-suspendido .verif-sello {
+  border-color: var(--alert);
+  color: var(--alert);
+}
