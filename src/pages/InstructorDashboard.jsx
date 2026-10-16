@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import api, { apiErrorMessage } from '../api/client'
 import PrecioChips from '../components/PrecioChips'
+import VerificacionStps from '../components/VerificacionStps'
 import AnaliticaPanel from '../components/AnaliticaPanel'
 
 // Recorta la foto al centro en un cuadrado de 400 px y la convierte a JPEG (calidad 0.85).
@@ -911,6 +912,8 @@ export default function InstructorDashboard() {
           </div>
         </div>
 
+        <VerificacionStps onVerificado={cargarTodo} />
+
         {msg.text && <div className={`banner ${msg.type === 'error' ? 'banner-error' : 'banner-success'}`}>{msg.text}</div>}
 
         <div className="tabs">
@@ -963,7 +966,7 @@ export default function InstructorDashboard() {
                   </button>
                 )}
                 <span style={{ fontSize: '0.78rem', color: 'var(--ink-soft)' }}>
-                  JPG, PNG o WEBP. Máximo 5 MB.
+                  JPG, PNG o WEBP de hasta 15 MB. La recortamos y optimizamos automáticamente.
                 </span>
               </div>
             </div>

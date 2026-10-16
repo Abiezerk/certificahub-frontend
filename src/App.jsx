@@ -8,6 +8,7 @@ import Login from './pages/Login'
 import Register from './pages/Register'
 import InstructorDashboard from './pages/InstructorDashboard'
 import EmpresaDashboard from './pages/EmpresaDashboard'
+import AdminDashboard from './pages/AdminDashboard'
 import Evaluar from './pages/Evaluar'
 import Verificar from './pages/Verificar'
 import AvisoPrivacidad from './pages/AvisoPrivacidad'
@@ -19,6 +20,7 @@ import usePageMeta from './hooks/usePageMeta'
 function Panel() {
   const { user } = useAuth()
   usePageMeta({ titulo: 'Mi panel', noindex: true })
+  if (user.userType === 'Admin') return <AdminDashboard />
   if (user.userType === 'Instructor') return <InstructorDashboard />
   return <EmpresaDashboard />
 }

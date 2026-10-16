@@ -14,7 +14,7 @@ const ESTADOS_MEXICO = [
 ]
 
 const emptyInstructor = {
-  email: '', password: '', firstName: '', lastName: '', phoneNumber: '', estado: '', bio: ''
+  email: '', password: '', firstName: '', lastName: '', phoneNumber: '', estado: '', bio: '', rfc: ''
 }
 
 const emptyEmpresa = {
@@ -100,6 +100,18 @@ export default function Register() {
               <label>Contraseña <span style={{ color: 'var(--alert)' }}>*</span></label>
               <input type="password" required minLength={8} placeholder="Mínimo 8 caracteres" value={instructorForm.password}
                 onChange={(e) => setInstructorForm({ ...instructorForm, password: e.target.value })} />
+            </div>
+            <div className="form-group">
+              <label>RFC con homoclave <span style={{ color: 'var(--alert)' }}>*</span></label>
+              <input required minLength={13} maxLength={13} placeholder="PELJ900515AB1" value={instructorForm.rfc}
+                pattern="[A-Za-zÑñ&]{4}[0-9]{6}[A-Za-z0-9]{3}"
+                title="13 caracteres: 4 letras, tu fecha de nacimiento (AAMMDD) y la homoclave"
+                style={{ fontFamily: 'var(--font-mono)', textTransform: 'uppercase' }}
+                onChange={(e) => setInstructorForm({ ...instructorForm, rfc: e.target.value.toUpperCase().replace(/\s/g, '') })} />
+              <span className="campo-ayuda">
+                Con tu RFC verificamos tu registro como agente capacitador en el padrón público de la STPS y los cursos que
+                tienes registrados. Solo podrás ofrecer esos cursos.
+              </span>
             </div>
             <div className="form-row">
               <div className="form-group">

@@ -1699,3 +1699,273 @@ footer.site-footer {
 #root > footer.site-footer {
   margin-top: auto;
 }
+
+.campo-ayuda {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+  margin-top: 5px;
+  line-height: 1.45;
+}
+
+/* ============================================================
+   VERIFICACIÓN STPS (panel del instructor)
+   ============================================================ */
+.verif-stps {
+  border-left: 4px solid var(--gauge-amber);
+  margin-bottom: 20px;
+}
+
+.verif-encabezado {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  margin-bottom: 14px;
+}
+
+.verif-encabezado h2 {
+  font-size: 1.15rem;
+  margin: 0 0 4px;
+}
+
+.verif-encabezado p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+}
+
+.verif-sello {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 2px solid var(--gauge-amber);
+  color: #7a5410;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.verif-paso {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 640px;
+}
+
+.verif-paso > label {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.verif-fila {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.verif-rfc,
+.verif-codigo {
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  text-transform: uppercase;
+  flex: 1;
+  min-width: 0;
+  max-width: 260px;
+}
+
+.verif-codigo {
+  letter-spacing: 0.35em;
+  max-width: 180px;
+}
+
+.verif-resultado {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 28px;
+  padding: 14px 16px;
+  background: var(--paper);
+  border-radius: var(--radius);
+}
+
+.verif-resultado > div {
+  display: flex;
+  flex-direction: column;
+}
+
+.verif-etiqueta {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-soft);
+}
+
+.verif-subtitulo {
+  font-size: 1rem;
+  margin: 10px 0 0;
+}
+
+.verif-opcion {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+}
+
+.verif-opcion p {
+  margin: 0 0 10px;
+  font-size: 0.9rem;
+}
+
+.verif-correo {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: 1rem !important;
+}
+
+.verif-estado {
+  background: var(--paper);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  font-size: 0.9rem;
+}
+
+.enlace-boton {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--seal-dark);
+  text-decoration: underline;
+  cursor: pointer;
+  font: inherit;
+}
+
+.verif-ok {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #e3f1ec;
+  color: var(--ink);
+  border-radius: var(--radius-lg);
+  padding: 10px 14px;
+  font-size: 0.88rem;
+  margin-bottom: 16px;
+}
+
+.verif-ok-icono {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--seal);
+  color: #fff;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* ============================================================
+   PANEL DE ADMINISTRADOR
+   ============================================================ */
+.admin-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.admin-lista .card + .card {
+  margin-top: 0;
+}
+
+.admin-solicitud-cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.admin-solicitud h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.admin-meta {
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+}
+
+.admin-datos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 10px 20px;
+  margin: 14px 0;
+}
+
+.admin-datos dt {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-soft);
+}
+
+.admin-datos dd {
+  margin: 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.admin-documentos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.admin-documentos .campo-ayuda {
+  flex-basis: 100%;
+}
+
+.admin-rechazo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 560px;
+}
+
+.admin-rechazo label {
+  font-weight: 600;
+  font-size: 0.88rem;
+}
+
+.admin-rechazo textarea {
+  min-height: 70px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  font: inherit;
+}
+
+.admin-coincide {
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+.admin-coincide.si {
+  background: #e3f1ec;
+  color: var(--seal-dark);
+}
+
+.admin-coincide.no {
+  background: #fbe9e6;
+  color: #8f2a20;
+}
