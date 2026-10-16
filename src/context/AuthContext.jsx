@@ -45,13 +45,18 @@ export function AuthProvider({ children }) {
     return persist(data)
   }
 
+  async function registerInstitucion(payload) {
+    const { data } = await api.post('/auth/register/institucion', payload)
+    return persist(data)
+  }
+
   function logout() {
     localStorage.removeItem('ch_token')
     localStorage.removeItem('ch_user')
     setUser(null)
   }
 
-  const value = { user, login, registerInstructor, registerEmpresa, logout }
+  const value = { user, login, registerInstructor, registerEmpresa, registerInstitucion, logout }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

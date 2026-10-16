@@ -111,14 +111,21 @@ export default function VerificacionStps({ onVerificado }) {
     : null
 
   if (!estado) return null
+
+  // Instructor (persona física, RFC de 13) o institución (persona moral, RFC de 12)
+  const esInstitucion = estado.tipoCuenta === 'Institucion'
+  const largoRfc = esInstitucion ? 12 : 13
+  const ejemploRfc = esInstitucion ? 'CIN150101AB1' : 'PELJ900515AB1'
   if (estado.estado === 'Verificado') {
     return (
       <>
         <div className="verif-ok" role="status">
           <span className="verif-ok-icono" aria-hidden="true">✓</span>
           <span className="verif-ok-texto">
-            <strong>Agente capacitador verificado ante la STPS</strong> · RFC {estado.rfc} · {estado.cursosRegistrados}{' '}
-            {estado.cursosRegistrados === 1 ? 'curso registrado' : 'cursos registrados'}
+            <strong>{esInstitucion ? 'Institución verificada ante la STPS' : 'Agente capacitador verificado ante la STPS'}</strong> · RFC {estado.rfc}
+            {!esInstitucion && (
+              <> · {estado.cursosRegistrados} {estado.cursosRegistrados === 1 ? 'curso registrado' : 'cursos registrados'}</>
+            )}
             {ultimaRevision && <span className="verif-ok-fecha"> · Última revisión: {ultimaRevision}</span>}
           </span>
           <button
@@ -126,7 +133,7 @@ export default function VerificacionStps({ onVerificado }) {
             className="btn btn-ghost btn-sm"
             onClick={actualizarDesdeStps}
             disabled={cargando}
-            title="¿Registraste un curso nuevo ante la STPS? Actualiza para poder ofrecerlo."
+            title={esInstitucion ? 'Vuelve a consultar tu registro en la STPS' : '¿Registraste un curso nuevo ante la STPS? Actualiza para poder ofrecerlo.'}
           >
             {cargando ? 'Consultando la STPS…' : '↻ Actualizar desde la STPS'}
           </button>
@@ -147,8 +154,10 @@ export default function VerificacionStps({ onVerificado }) {
             <h2 id="verif-titulo">Tu perfil está suspendido</h2>
             <p>
               En la última revisión, tu registro de agente capacitador (RFC {estado.rfc}) no aparece como activo en el
-              padrón de la STPS. Mientras tanto tu perfil no aparece en el ranking, las empresas no pueden contratarte y no
-              puedes emitir constancias DC-3. Tus datos y cursos se conservan.
+              padrón de la STPS.{' '}
+              {esInstitucion
+                ? 'Mientras tanto tu institución no aparece en el ranking y no puedes aprobar instructores. Tus datos se conservan.'
+                : 'Mientras tanto tu perfil no aparece en el ranking, las empresas no pueden contratarte y no puedes emitir constancias DC-3. Tus datos y cursos se conservan.'}
             </p>
           </div>
         </div>
@@ -187,8 +196,9 @@ export default function VerificacionStps({ onVerificado }) {
         <div>
           <h2 id="verif-titulo">Verifica tu registro de agente capacitador</h2>
           <p>
-            Mientras no lo verifiques, tu perfil no aparece en el ranking y las empresas no pueden contratarte. Solo podrás
-            ofrecer los cursos que tienes registrados ante la STPS.
+            {esInstitucion
+              ? 'Mientras no lo verifiques, tu institución no aparece en el ranking y no puedes aprobar a los instructores que trabajan contigo.'
+              : 'Mientras no lo verifiques, tu perfil no aparece en el ranking y las empresas no pueden contratarte. Solo podrás ofrecer los cursos que tienes registrados ante la STPS.'}
           </p>
         </div>
       </div>
@@ -213,18 +223,18 @@ export default function VerificacionStps({ onVerificado }) {
 
       {!enRevision && paso === 'inicio' && (
         <form className="verif-paso" onSubmit={consultar}>
-          <label htmlFor="verif-rfc">Tu RFC con homoclave</label>
+          <label htmlFor="verif-rfc">{esInstitucion ? 'RFC de la institución (persona moral, con homoclave)' : 'Tu RFC con homoclave'}</label>
           <div className="verif-fila">
             <input
               id="verif-rfc"
               value={rfc}
-              maxLength={13}
+              maxLength={largoRfc}
               onChange={(e) => setRfc(e.target.value.toUpperCase().replace(/\s/g, ''))}
-              placeholder="PELJ900515AB1"
+              placeholder={ejemploRfc}
               className="verif-rfc"
               required
             />
-            <button className="btn btn-primary" disabled={cargando || rfc.length !== 13}>
+            <button className="btn btn-primary" disabled={cargando || rfc.length !== largoRfc}>
               {cargando ? 'Consultando la STPS…' : 'Consultar mi registro'}
             </button>
           </div>
@@ -329,7 +339,11 @@ export default function VerificacionStps({ onVerificado }) {
       {!enRevision && paso === 'manual' && (
         <form className="verif-paso" onSubmit={enviarManual}>
           <div className="form-group">
-            <label htmlFor="verif-ine">Identificación oficial vigente (INE, pasaporte o cédula profesional)</label>
+            <label htmlFor="verif-ine">
+              {esInstitucion
+                ? 'Identificación oficial del representante legal (INE o pasaporte)'
+                : 'Identificación oficial vigente (INE, pasaporte o cédula profesional)'}
+            </label>
             <input
               id="verif-ine"
               type="file"

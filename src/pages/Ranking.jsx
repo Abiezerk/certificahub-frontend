@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import apiClient from "../api/client";
 import PremiumBadge from "../components/PremiumBadge";
 import InstructorDetailModal from "../components/InstructorDetailModal";
+import ListaInstituciones from "../components/ListaInstituciones";
 import "../styles/Ranking.css";
 import usePageMeta from '../hooks/usePageMeta'
 
@@ -51,6 +52,8 @@ export default function Ranking() {
   const [ordenadoPor, setOrdenadoPor] = useState("premium");
   const [instructorSeleccionado, setInstructorSeleccionado] = useState(null);
   const [loading, setLoading] = useState(true);
+  // "instructores" | "instituciones"
+  const [vista, setVista] = useState("instructores");
 
   // Cargar instructores
   useEffect(() => {
@@ -148,11 +151,25 @@ export default function Ranking() {
 
   return (
     <div className="ranking-container">
-      <h1>Ranking de instructores</h1>
+      <h1>Ranking de {vista === "instructores" ? "instructores" : "instituciones"}</h1>
       <p className="ranking-description">
-        Ordena por cualquier columna para comparar instructores según lo que más te importe.
+        {vista === "instructores"
+          ? "Ordena por cualquier columna para comparar instructores según lo que más te importe."
+          : "Instituciones capacitadoras ordenadas por la calificación promedio de sus instructores."}
       </p>
 
+      <div className="ranking-vistas" role="tablist" aria-label="Qué quieres ver">
+        <button role="tab" aria-selected={vista === "instructores"} className={vista === "instructores" ? "activo" : ""} onClick={() => setVista("instructores")}>
+          Instructores
+        </button>
+        <button role="tab" aria-selected={vista === "instituciones"} className={vista === "instituciones" ? "activo" : ""} onClick={() => setVista("instituciones")}>
+          Instituciones
+        </button>
+      </div>
+
+      {vista === "instituciones" && <ListaInstituciones />}
+
+      {vista === "instructores" && (<>
       {/* Filtros */}
       <div className="filtros-grupo">
         <select
@@ -324,6 +341,7 @@ export default function Ranking() {
           </table>
         </div>
       )}
+      </>)}
 
       {/* Modal detalle instructor */}
       {instructorSeleccionado && (

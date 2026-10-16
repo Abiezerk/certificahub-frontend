@@ -2013,3 +2013,237 @@ footer.site-footer {
   border-color: var(--alert);
   color: var(--alert);
 }
+
+/* ============================================================
+   INSTITUCIONES
+   ============================================================ */
+.ranking-vistas {
+  display: inline-flex;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 3px;
+  gap: 2px;
+  margin-bottom: 20px;
+}
+
+.ranking-vistas button {
+  border: none;
+  background: transparent;
+  font: inherit;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+  padding: 8px 18px;
+  border-radius: 7px;
+  cursor: pointer;
+}
+
+.ranking-vistas button.activo {
+  background: var(--seal);
+  color: #fff;
+}
+
+.inst-nota {
+  font-size: 0.88rem;
+  color: var(--ink-soft);
+  margin: 0 0 14px;
+}
+
+.inst-busqueda {
+  width: 100%;
+  max-width: 420px;
+  margin-bottom: 16px;
+}
+
+.inst-tarjetas,
+.inst-instructores {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.inst-instructores .card + .card {
+  margin-top: 0;
+}
+
+.inst-tarjeta,
+.inst-instructor {
+  display: grid;
+  grid-template-columns: 28px 48px 1fr auto;
+  align-items: center;
+  gap: 14px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 14px 18px;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.inst-instructor {
+  grid-template-columns: 28px 48px 1fr auto auto;
+}
+
+.inst-tarjeta:hover {
+  border-color: var(--seal);
+}
+
+.inst-posicion {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--seal-dark);
+  text-align: center;
+}
+
+.inst-logo {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #eef0ea;
+  color: #5f665e;
+  font-weight: 700;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.inst-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.inst-logo-grande {
+  width: 72px;
+  height: 72px;
+  font-size: 1.6rem;
+}
+
+.inst-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.inst-meta,
+.inst-especialidades {
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+}
+
+.inst-especialidades {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.inst-calificacion {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+  text-align: right;
+}
+
+.inst-calificacion-grande strong {
+  font-size: 2rem;
+  line-height: 1;
+  color: var(--ink);
+}
+
+.inst-sin-calif {
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+}
+
+.inst-volver {
+  display: inline-block;
+  margin-bottom: 14px;
+  font-size: 0.88rem;
+  color: var(--ink-soft);
+}
+
+.inst-cabecera {
+  display: grid;
+  grid-template-columns: 72px 1fr auto;
+  gap: 18px;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+
+.inst-cabecera h1 {
+  margin: 2px 0 2px;
+  font-size: 1.6rem;
+}
+
+.inst-cabecera p {
+  margin: 10px 0 0;
+  color: var(--ink-soft);
+  font-size: 0.92rem;
+}
+
+.inst-etiqueta {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--seal-dark);
+  font-weight: 600;
+}
+
+.inst-subtitulo {
+  font-size: 1.15rem;
+  margin: 0 0 4px;
+}
+
+.inst-resumen {
+  margin-bottom: 16px;
+}
+
+.tab-contador {
+  display: inline-block;
+  margin-left: 6px;
+  min-width: 20px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--alert);
+  color: #fff;
+  font-size: 0.72rem;
+}
+
+@media (max-width: 640px) {
+  .inst-tarjeta,
+  .inst-instructor {
+    grid-template-columns: 40px 1fr;
+  }
+  .inst-posicion {
+    display: none;
+  }
+  .inst-calificacion {
+    grid-column: 2;
+    align-items: flex-start;
+    text-align: left;
+  }
+  .inst-instructor .btn {
+    grid-column: 1 / -1;
+  }
+  .inst-cabecera {
+    grid-template-columns: 1fr;
+  }
+  .inst-calificacion-grande {
+    align-items: flex-start;
+  }
+}
+
+.inst-fila-main {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  min-width: 0;
+}

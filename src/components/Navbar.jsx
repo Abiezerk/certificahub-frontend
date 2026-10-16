@@ -2,6 +2,9 @@ import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
+// Cómo se muestra el tipo de cuenta en el menú
+const TIPO_CUENTA = { Instructor: 'Instructor', Empresa: 'Empresa', Institucion: 'Institución', Admin: 'Administrador' }
+
 export default function Navbar() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
@@ -36,7 +39,7 @@ export default function Navbar() {
         {user ? (
           <div className="nav-user nav-escritorio">
             <span className="nav-user-name">
-              {user.firstName} · {user.userType}
+              {user.firstName} · {TIPO_CUENTA[user.userType] || user.userType}
             </span>
             <button className="btn btn-outline btn-sm" onClick={handleLogout}>
               Salir
@@ -74,7 +77,7 @@ export default function Navbar() {
               <Link to="/panel">Mi panel</Link>
               <div className="nav-movil-usuario">
                 <span>
-                  {user.firstName} · {user.userType}
+                  {user.firstName} · {TIPO_CUENTA[user.userType] || user.userType}
                 </span>
                 <button className="btn btn-outline btn-sm" onClick={handleLogout}>
                   Salir

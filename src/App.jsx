@@ -9,6 +9,8 @@ import Register from './pages/Register'
 import InstructorDashboard from './pages/InstructorDashboard'
 import EmpresaDashboard from './pages/EmpresaDashboard'
 import AdminDashboard from './pages/AdminDashboard'
+import InstitucionDashboard from './pages/InstitucionDashboard'
+import InstitucionDetalle from './pages/InstitucionDetalle'
 import Evaluar from './pages/Evaluar'
 import Verificar from './pages/Verificar'
 import AvisoPrivacidad from './pages/AvisoPrivacidad'
@@ -21,6 +23,7 @@ function Panel() {
   const { user } = useAuth()
   usePageMeta({ titulo: 'Mi panel', noindex: true })
   if (user.userType === 'Admin') return <AdminDashboard />
+  if (user.userType === 'Institucion') return <InstitucionDashboard />
   if (user.userType === 'Instructor') return <InstructorDashboard />
   return <EmpresaDashboard />
 }
@@ -37,6 +40,7 @@ export default function App() {
         <Route path="/evaluar/:token" element={<Evaluar />} />
         <Route path="/verificar" element={<Verificar />} />
         <Route path="/verificar/:numeroSerie" element={<Verificar />} />
+        <Route path="/instituciones/:id" element={<InstitucionDetalle />} />
         <Route path="/privacidad" element={<AvisoPrivacidad />} />
         <Route path="/terminos" element={<Terminos />} />
         <Route
