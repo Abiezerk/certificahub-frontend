@@ -5,7 +5,7 @@ import { PRECIOS, RESPONSABLE, dinero } from '../config/negocio'
 
 // BORRADOR — debe revisarlo un abogado antes de publicarse en producción.
 // Datos del responsable y precios: src/config/negocio.js
-export const VERSION_TERMINOS = '2026-10-15.2'
+export const VERSION_TERMINOS = '2026-10-29'
 
 export default function Terminos() {
   usePageMeta({
@@ -76,25 +76,29 @@ export default function Terminos() {
             </li>
           </ul>
 
-          <h2>5. Planes y pagos para instructores</h2>
+          <h2>5. Suscripción y pagos para instructores</h2>
           <ul>
-            {PRECIOS.planes.map((p) => (
-              <li key={p.id}>
-                <strong>Plan {p.nombre}:</strong> {dinero(p.precioMensual)} {PRECIOS.moneda} al mes ({iva}),{' '}
-                {p.limiteDc3Mensual ? `hasta ${p.limiteDc3Mensual} constancias DC-3 al mes` : 'constancias DC-3 ilimitadas'}.
-              </li>
-            ))}
+            <li>
+              <strong>Suscripción mensual:</strong> {dinero(PRECIOS.precioMensual)} {PRECIOS.moneda} al mes ({iva}), con
+              constancias DC-3 ilimitadas.
+            </li>
+            <li>
+              <strong>Prueba gratis:</strong> {PRECIOS.diasPrueba} días, una sola vez por instructor (y por RFC). Se activa
+              después de verificar tu registro ante la STPS y requiere registrar una tarjeta. Si no cancelas antes de que
+              termine la prueba, se realiza el primer cobro mensual de forma automática.
+            </li>
             <li>
               El cobro es mensual y se renueva automáticamente con la tarjeta registrada. Los pagos se procesan a través de
               Stripe; CertificaHub no ve ni guarda los datos de tu tarjeta.
             </li>
             <li>
-              El límite de constancias se cuenta por mes calendario. Al alcanzarlo, puedes cambiar al plan con mayor límite
-              para seguir generando constancias ese mes.
+              Mientras tu suscripción no esté activa (prueba terminada sin pago, pago rechazado o suscripción cancelada), tu
+              perfil no aparece en el ranking ni puede recibir nuevas contrataciones. Los cursos que ya tenías contratados
+              puedes impartirlos y emitir sus constancias.
             </li>
             <li>
-              Puedes cancelar tu plan en cualquier momento; seguirá activo hasta el final del periodo ya pagado y no se
-              realizan reembolsos por periodos parciales.
+              Puedes cancelar tu suscripción en cualquier momento desde tu panel; seguirá activa hasta el final del periodo
+              ya pagado y no se realizan reembolsos por periodos parciales.
             </li>
             <li>
               Los precios vigentes se publican en la <Link to="/precios">página de precios</Link>. Si cambian, te avisaremos

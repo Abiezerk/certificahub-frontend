@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import api, { apiErrorMessage } from '../api/client'
 import PrecioChips from '../components/PrecioChips'
 import VerificacionStps from '../components/VerificacionStps'
+import SuscripcionInstructor from '../components/SuscripcionInstructor'
 import MisInstituciones from '../components/MisInstituciones'
 import EliminarCuenta from '../components/EliminarCuenta'
 import AnaliticaPanel from '../components/AnaliticaPanel'
@@ -64,6 +65,8 @@ const ESTADOS_MEXICO = [
 
 export default function InstructorDashboard() {
   const [tab, setTab] = useState(TABS[0])
+  // Cambia al quedar verificado para que aparezca la tarjeta de la suscripción
+  const [versionVerificacion, setVersionVerificacion] = useState(0)
   const [transacciones, setTransacciones] = useState([])
   const [especialidades, setEspecialidades] = useState([])
   const [misEspecialidades, setMisEspecialidades] = useState([])
@@ -920,7 +923,13 @@ export default function InstructorDashboard() {
           </div>
         </div>
 
-        <VerificacionStps onVerificado={cargarTodo} />
+        <VerificacionStps
+          onVerificado={() => {
+            cargarTodo()
+            setVersionVerificacion((v) => v + 1)
+          }}
+        />
+        <SuscripcionInstructor key={versionVerificacion} />
 
         {msg.text && <div className={`banner ${msg.type === 'error' ? 'banner-error' : 'banner-success'}`}>{msg.text}</div>}
 

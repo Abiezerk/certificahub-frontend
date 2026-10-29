@@ -8,11 +8,11 @@
 export const RESPONSABLE = {
   // "persona física" (hoy) o "persona moral" (si se constituye una empresa)
   tipo: 'persona física',
-  nombre: '[POR COMPLETAR: tu nombre completo]',
-  domicilio: '[POR COMPLETAR: calle, número, colonia, código postal, municipio y estado]',
-  correoPrivacidad: '[POR COMPLETAR: correo para temas de privacidad, ej. privacidad@certificahub.mx]',
-  correoContacto: '[POR COMPLETAR: correo de contacto general, ej. contacto@certificahub.mx]',
-  sitio: 'certificahub.mx',
+  nombre: 'Israel Abiezer Canales Espinoza',
+  domicilio: '[POR COMPLETAR: domicilio]',
+  correoPrivacidad: 'privacidad@certificahub.com.mx',
+  correoContacto: 'contacto@certificahub.com.mx',
+  sitio: 'certificahub.com.mx',
   // Tribunales para controversias (Términos y condiciones)
   jurisdiccion: 'Tijuana, Baja California'
 }
@@ -24,27 +24,15 @@ export const ALOJAMIENTO = {
   pais: 'Estados Unidos de América'
 }
 
-// Planes para instructores (las empresas usan CertificaHub sin costo)
+// Suscripción para instructores (las empresas usan CertificaHub sin costo).
+// Si cambia el precio, también hay que cambiarlo en Stripe (Stripe:PriceId del backend).
 export const PRECIOS = {
   moneda: 'MXN',
   // Confirmar con el contador si los precios se publican con IVA incluido o "+ IVA"
   ivaIncluido: true,
-  planes: [
-    {
-      id: 'estandar',
-      nombre: 'Estándar',
-      precioMensual: 499,
-      limiteDc3Mensual: 80,
-      descripcion: 'Para instructores independientes con un volumen de cursos regular.'
-    },
-    {
-      id: 'pro',
-      nombre: 'Pro',
-      precioMensual: 1200,
-      limiteDc3Mensual: null, // ilimitado
-      descripcion: 'Para instructores con mucho volumen o que capacitan a grupos grandes.'
-    }
-  ]
+  precioMensual: 299,
+  // Debe coincidir con Suscripcion:DiasPrueba del backend
+  diasPrueba: 7
 }
 
 export const esPendiente = (valor) => typeof valor === 'string' && valor.startsWith('[POR COMPLETAR')

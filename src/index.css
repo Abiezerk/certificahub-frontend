@@ -2429,3 +2429,21 @@ footer.site-footer {
   margin: 0 0 14px;
   line-height: 1.6;
 }
+
+.precios-planes-unico {
+  grid-template-columns: minmax(0, 380px);
+  justify-content: center;
+}
+
+/* Suscripción del instructor (reutiliza los estilos de la verificación STPS) */
+.susc-margen {
+  margin-top: 14px;
+}
+
+.verif-ok.susc-problema {
+  background: #f9e6e3;
+}
+
+.verif-ok.susc-problema .verif-ok-icono {
+  background: var(--alert);
+}

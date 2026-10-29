@@ -122,7 +122,7 @@ export default function Register() {
               <span className="campo-ayuda">
                 Con tu RFC verificamos tu registro como agente capacitador en el padrón público de la STPS y los cursos que
                 tienes registrados. Solo podrás ofrecer esos cursos. Consulta los{' '}
-                <Link to="/precios" target="_blank" rel="noopener">planes para instructores</Link>.
+                <Link to="/precios" target="_blank" rel="noopener">precios para instructores</Link>.
               </span>
             </div>
             <div className="form-row">

@@ -2,9 +2,10 @@ import { Link } from 'react-router-dom'
 import usePageMeta from '../hooks/usePageMeta'
 import { PRECIOS, dinero } from '../config/negocio'
 
-// Lo que incluyen todos los planes
+// Lo que incluye la suscripción
 const INCLUYE = [
   'Perfil en el ranking con el sello de agente capacitador verificado ante la STPS',
+  'Constancias DC-3 ilimitadas',
   'Contrataciones de empresas con agenda, horarios y avisos',
   'Constancias DC-3 con el nombre, la duración y el área temática de tu registro oficial',
   'Código QR de verificación de autenticidad en cada DC-3',
@@ -16,11 +17,15 @@ const INCLUYE = [
 const PREGUNTAS = [
   {
     p: '¿Las empresas pagan por usar CertificaHub?',
-    r: 'No. Las empresas buscan y contratan instructores sin costo. Los planes son solo para instructores.'
+    r: 'No. Las empresas buscan y contratan instructores sin costo. La suscripción es solo para instructores.'
   },
   {
-    p: '¿Qué pasa si llego al límite de constancias del plan Estándar?',
-    r: 'Puedes cambiar al plan Pro en cualquier momento para seguir generando constancias ese mes. El límite se cuenta por mes calendario.'
+    p: '¿Cómo funciona la prueba gratis?',
+    r: `Cuando verificamos tu registro ante la STPS, activas tu prueba de ${PRECIOS.diasPrueba} días registrando una tarjeta. No se te cobra nada durante la prueba; si no la cancelas, al terminar se hace el primer cobro mensual. La prueba es una sola vez por instructor.`
+  },
+  {
+    p: '¿Qué pasa si no pago o cancelo?',
+    r: 'Tu perfil deja de aparecer en el ranking y no puedes recibir nuevas contrataciones. Los cursos que ya tenías contratados los puedes impartir y emitir sus constancias DC-3.'
   },
   {
     p: '¿Cómo se paga?',
@@ -28,7 +33,7 @@ const PREGUNTAS = [
   },
   {
     p: '¿Puedo cancelar cuando quiera?',
-    r: 'Sí. Tu plan sigue activo hasta el final del mes que ya pagaste y no se vuelve a cobrar.'
+    r: 'Sí, desde tu panel. Tu suscripción sigue activa hasta el final del mes que ya pagaste y no se vuelve a cobrar. Si cancelas durante la prueba gratis, no se te cobra nada.'
   },
   {
     p: '¿Necesito estar registrado ante la STPS?',
@@ -38,8 +43,8 @@ const PREGUNTAS = [
 
 export default function Precios() {
   usePageMeta({
-    titulo: 'Planes para instructores',
-    descripcion: `Planes de CertificaHub para instructores de capacitación STPS desde ${dinero(PRECIOS.planes[0].precioMensual)} al mes. Constancias DC-3 con QR de verificación.`
+    titulo: 'Precios para instructores',
+    descripcion: `CertificaHub para instructores de capacitación STPS: ${dinero(PRECIOS.precioMensual)} al mes con ${PRECIOS.diasPrueba} días de prueba gratis. Constancias DC-3 ilimitadas con QR de verificación.`
   })
 
   return (
@@ -47,41 +52,32 @@ export default function Precios() {
       <div className="container">
         <header className="precios-cabecera">
           <span className="precios-etiqueta">Para instructores</span>
-          <h1>Planes simples, sin letras chiquitas</h1>
+          <h1>Un solo precio, sin letras chiquitas</h1>
           <p>
-            Elige según cuántas constancias DC-3 generas al mes. Para las empresas que te contratan, CertificaHub es gratis.
+            Todo incluido y constancias DC-3 ilimitadas. Para las empresas que te contratan, CertificaHub es gratis.
           </p>
         </header>
 
-        <div className="precios-planes">
-          {PRECIOS.planes.map((plan, i) => {
-            const destacado = i === PRECIOS.planes.length - 1
-            return (
-              <article className={`precios-plan ${destacado ? 'destacado' : ''}`} key={plan.id}>
-                {destacado && <span className="precios-insignia">Sin límite</span>}
-                <h2>{plan.nombre}</h2>
-                <p className="precios-plan-desc">{plan.descripcion}</p>
-                <p className="precios-monto">
-                  <strong>{dinero(plan.precioMensual)}</strong> <span>{PRECIOS.moneda} / mes</span>
-                </p>
-                <p className="precios-iva">{PRECIOS.ivaIncluido ? 'IVA incluido' : 'Más IVA'}</p>
-                <p className="precios-limite">
-                  {plan.limiteDc3Mensual ? (
-                    <>Hasta <strong>{plan.limiteDc3Mensual}</strong> constancias DC-3 al mes</>
-                  ) : (
-                    <><strong>Constancias DC-3 ilimitadas</strong></>
-                  )}
-                </p>
-                <Link to="/registro" className={`btn ${destacado ? 'btn-primary' : 'btn-outline'} btn-block`}>
-                  Empezar con {plan.nombre}
-                </Link>
-              </article>
-            )
-          })}
+        <div className="precios-planes precios-planes-unico">
+          <article className="precios-plan destacado">
+            <span className="precios-insignia">{PRECIOS.diasPrueba} días gratis</span>
+            <h2>Suscripción mensual</h2>
+            <p className="precios-plan-desc">Para instructores verificados ante la STPS.</p>
+            <p className="precios-monto">
+              <strong>{dinero(PRECIOS.precioMensual)}</strong> <span>{PRECIOS.moneda} / mes</span>
+            </p>
+            <p className="precios-iva">{PRECIOS.ivaIncluido ? 'IVA incluido' : 'Más IVA'}</p>
+            <p className="precios-limite">
+              <strong>Prueba gratis de {PRECIOS.diasPrueba} días</strong> al verificar tu registro. Cancela cuando quieras.
+            </p>
+            <Link to="/registro" className="btn btn-primary btn-block">
+              Empezar prueba gratis
+            </Link>
+          </article>
         </div>
 
         <section className="card precios-incluye">
-          <h2>Todos los planes incluyen</h2>
+          <h2>La suscripción incluye</h2>
           <ul>
             {INCLUYE.map((t) => (
               <li key={t}>{t}</li>
